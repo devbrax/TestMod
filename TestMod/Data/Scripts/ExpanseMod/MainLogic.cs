@@ -21,11 +21,8 @@ using VRage.ModAPI;
 using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
-using ExpanseMod.LootSpawn;
 using Sandbox.ModAPI;
-using ProtoBuf;
-
-using MyAPIGateway = Sandbox.ModAPI.MyAPIGateway;
+using ExpanseMod.LootSpawn;
 
 namespace ExpanseMod
 {
@@ -34,7 +31,7 @@ namespace ExpanseMod
     {
         int counter = 0;
         bool debugMode = true;
-        ExpanseMod.LootSpawn.Zone z = new ExpanseMod.LootSpawn.Zone("Test Zone", 0, 0, 0, 100, true);
+        //ExpanseMod.LootSpawn.Zone z = new ExpanseMod.LootSpawn.Zone("Test Zone", 0, 0, 0, 100, true);
 
         public bool _isInitialized { get; set; }
 
