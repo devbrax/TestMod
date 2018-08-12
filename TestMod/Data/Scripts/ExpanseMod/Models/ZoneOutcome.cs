@@ -5,11 +5,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ExpanseMod.LootSpawn.Models
+namespace ExpanseMod.Models
 {
-    public class ZoneScanResult
+    public class ZoneOutcome
     {
         public List<long> Players { get; set; }
-        public Dictionary<long,MyCubeGrid> Grids { get; set; }
+        public List<MyCubeGrid> Ships { get; set; }
     }
 }

@@ -5,6 +5,7 @@ using VRage.Utils;
 using Sandbox.ModAPI;
 using ExpanseMod.LootSpawn;
 using ExpanseMod.Util;
+using System;
 
 namespace ExpanseMod
 {
@@ -13,7 +14,6 @@ namespace ExpanseMod
     {
         public Zone _zone { get; set; }
         int _counter = 0;
-        bool _debugMode = true;
 
         public bool _isInitialized { get; set; }
 
@@ -31,25 +31,43 @@ namespace ExpanseMod
 
         public override void UpdateBeforeSimulation()
         {
-            if (!_isInitialized && MyAPIGateway.Session != null && MyAPIGateway.Session.Player != null)
+            try
             {
-                //Debug = MyAPIGateway.Session.Player.IsExperimentalCreator();
+                if (!_isInitialized && MyAPIGateway.Session != null && MyAPIGateway.Session.Player != null)
+                {
+                    //Debug = MyAPIGateway.Session.Player.IsExperimentalCreator();
 
-                if (!MyAPIGateway.Session.OnlineMode.Equals(MyOnlineModeEnum.OFFLINE) && MyAPIGateway.Multiplayer.IsServer && !MyAPIGateway.Utilities.IsDedicated)
+                    if (!MyAPIGateway.Session.OnlineMode.Equals(MyOnlineModeEnum.OFFLINE) && MyAPIGateway.Multiplayer.IsServer && !MyAPIGateway.Utilities.IsDedicated)
+                        InitServer();
+                    Init();
+                }
+                if (!_isInitialized && MyAPIGateway.Utilities != null && MyAPIGateway.Multiplayer != null
+                    && MyAPIGateway.Session != null && MyAPIGateway.Utilities.IsDedicated && MyAPIGateway.Multiplayer.IsServer)
+                {
                     InitServer();
-                Init();
+                    base.UpdateBeforeSimulation();
+                    return;
+                }
             }
-            if (!_isInitialized && MyAPIGateway.Utilities != null && MyAPIGateway.Multiplayer != null
-                && MyAPIGateway.Session != null && MyAPIGateway.Utilities.IsDedicated && MyAPIGateway.Multiplayer.IsServer)
+            catch(Exception ex)
             {
-                InitServer();
+                Logger.Log($"A fatal exception was thrown during UpdateBeforeSimulation initialization. {ex.Message} {ex.StackTrace}");
+                base.UpdateBeforeSimulation();
                 return;
             }
 
-            if(_counter % 10 == 0)
+            try
             {
-                _zone.Update();
+                if (_counter % 10 == 0)
+                {
+                    _zone.Update();
+                }
             }
+            catch(Exception ex)
+            {
+                Logger.Log($"A fatal exception was thrown during game logic. {ex.Message} {ex.StackTrace}");
+            }
+            
             _counter++;
 
             base.UpdateBeforeSimulation();

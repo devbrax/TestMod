@@ -7,17 +7,20 @@ using VRage.Game.ModAPI.Ingame;
 using ExpanseMod.Util;
 using Sandbox.Game.Entities;
 using System;
-using ExpanseMod.LootSpawn.Models;
+using VRage.Game;
+using ExpanseMod.Models;
 
 namespace ExpanseMod.LootSpawn
 {
     public class Zone
     {
         private string _zoneName { get; set; }
+        private Vector3D _zonePosition { get; set; }
         private BoundingSphereD _zoneBounds { get; set; }
         private bool _hasGPS { get; set; }
         private IMyGps _GPS { get; set; }
-        public ZoneScanResult _lastZoneScan { get; set; }
+
+        public ZoneScanResults _lastZoneScan { get; set; }
 
         private void CreateGPS(Vector3D position, string gpsName)
         {
@@ -29,13 +32,11 @@ namespace ExpanseMod.LootSpawn
             MyAPIGateway.Session.GPS.AddLocalGps(_GPS);
         }
 
-        private void UpdateStatus()
+        private void UpdateStatus(List<IMyPlayer> players)
         {
-            _GPS.Name = $"{_zoneName} - P:{_lastZoneScan.Players.Count}";
-
-            //Get all players
-            var players = new List<IMyPlayer>();
-            MyAPIGateway.Players.GetPlayers(players);
+            var foundShip = _lastZoneScan.FoundShips.FirstOrDefault();
+         
+            _GPS.Name = $"{_zoneName} - P:{_lastZoneScan.CharactersFound} S:{_lastZoneScan.ShipsFound} Dist:{(foundShip.Value != null ? foundShip.Value.DistanceToCenter : -1)}";
 
             //Modify existing GPS
             foreach (var player in players)
@@ -45,8 +46,9 @@ namespace ExpanseMod.LootSpawn
         public Zone(string zoneName, Vector3D position, double radius, bool createGPS = false)
         {
             _zoneName = zoneName;
-            _zoneBounds = new BoundingSphereD(position, (double)radius);
-            _lastZoneScan = new ZoneScanResult() { Grids = new Dictionary<long, MyCubeGrid>(), Players = new List<long>() };
+            _zonePosition = position;
+            _zoneBounds = new BoundingSphereD(_zonePosition, (double)radius);
+            _lastZoneScan = new ZoneScanResults(_zonePosition);
             _hasGPS = createGPS;
 
             if (createGPS)
@@ -57,46 +59,72 @@ namespace ExpanseMod.LootSpawn
         {
             var position = new Vector3D(x, y, z);
             _zoneName = zoneName;
-            _zoneBounds = new BoundingSphereD(position, (double)radius);
-            _lastZoneScan = new ZoneScanResult() { Grids = new Dictionary<long, MyCubeGrid>(), Players = new List<long>() };
+            _zonePosition = position;
+            _zoneBounds = new BoundingSphereD(_zonePosition, (double)radius);
+            _lastZoneScan = new ZoneScanResults(_zonePosition);
             _hasGPS = createGPS;
 
             if (createGPS)
                 CreateGPS(position, zoneName);
         }
 
+        //TODO: Don't require players
+        public ZoneScanResults Scan(List<IMyPlayer> players)
+        {
+            //Reset the last scan
+            _lastZoneScan = new ZoneScanResults(_zonePosition);
+
+            //Copy the zone bounds as we need to pass it by ref
+            var bounds = _zoneBounds;
+            var allEntities = MyAPIGateway.Entities.GetTopMostEntitiesInSphere(ref bounds);
+
+            //Get all cube grids
+            var gridsInZone = allEntities.Where(e => e is Sandbox.Game.Entities.MyCubeGrid);
+
+            //Get all characters
+            var playersInZone = allEntities.Where(e => e is IMyCharacter).Select(e => (IMyCharacter)e);
+
+            //Add players to the found list
+            foreach (var player in playersInZone)
+            {
+                var character = player.GetObjectBuilder() as MyObjectBuilder_Character;
+                if (character != null && character.OwningPlayerIdentityId.HasValue)
+                    _lastZoneScan.FoundPlayer(character.OwningPlayerIdentityId.Value, character);
+            }
+
+            //Add ships to the found list
+            foreach (Sandbox.Game.Entities.MyCubeGrid grid in gridsInZone)
+            {
+                var foundPlayer = players.FirstOrDefault(p => p.Controller?.ControlledEntity?.Entity?.GetTopMostParent()?.EntityId == grid.EntityId);
+                if (foundPlayer != null)
+                    _lastZoneScan.FoundPilotedShip(foundPlayer.IdentityId, grid);
+            }
+
+            return _lastZoneScan;
+        }
+
         public void Update()
         {
+            //TODO: We can probably used a cached player list to speed this up
             var players = new List<IMyPlayer>();
             MyAPIGateway.Players.GetPlayers(players);
 
-            var bounds = _zoneBounds;
-            var allEntities = MyAPIGateway.Entities.GetTopMostEntitiesInSphere(ref bounds);
-            
-            var gridsInZone = allEntities.Where(e => e is Sandbox.Game.Entities.MyCubeGrid);
+            Logger.Log("Doing scan...");
 
-            //var playersInZone = players.Where(p => allEntities.Any(e => p.Character. )).Select(p => p.IdentityId);
-            //_lastZoneScan.Players.AddRange(playersInZone);
+            Scan(players);
 
-            _lastZoneScan = new ZoneScanResult() { Grids = new Dictionary<long, MyCubeGrid>(), Players = new List<long>() };
+            Logger.Log($"Scan complete. Found {_lastZoneScan.FoundShips.Count} ships");
 
-            if (gridsInZone.Count() > 0)
-            {
-                foreach (Sandbox.Game.Entities.MyCubeGrid grid in gridsInZone)
-                {
-                    var foundPlayer = players.FirstOrDefault(p => p.Controller?.ControlledEntity?.Entity?.GetTopMostParent()?.EntityId == grid.EntityId);
-                    if (foundPlayer != null)
-                    {
-                        _lastZoneScan.Grids[foundPlayer.IdentityId] = grid;
-                        _lastZoneScan.Players.Add(foundPlayer.IdentityId);
-                    }
-                }
-            }
+            //TODO: Check if we should give reward
 
-            _lastZoneScan.Players = _lastZoneScan.Players.Distinct().ToList();
+            //TODO: Seems redundant to send the scan results to both
+            //Do the default behavior for now
+            var resolver = new ZoneOutcomeResolver(_lastZoneScan, new ZoneOutcomeResolverOptions(_lastZoneScan));
+
+            var outcome = resolver.Resolve();
 
             if (_hasGPS)
-                UpdateStatus();
+                UpdateStatus(players);
         }
     }
 }
