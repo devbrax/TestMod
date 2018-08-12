@@ -21,24 +21,24 @@ using VRage.ModAPI;
 using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
-using TestMod.LootSpawn;
+using ExpanseMod.LootSpawn;
 using Sandbox.ModAPI;
 using ProtoBuf;
 
 using MyAPIGateway = Sandbox.ModAPI.MyAPIGateway;
 
-namespace TestMod
+namespace ExpanseMod
 {
     [MySessionComponentDescriptor(MyUpdateOrder.BeforeSimulation)]
-    public class TestMod : MySessionComponentBase
+    public class MainLogic : MySessionComponentBase
     {
         int counter = 0;
         bool debugMode = true;
-        Zone z = new Zone("Test Zone", 0, 0, 0, 100, true);
+        ExpanseMod.LootSpawn.Zone z = new ExpanseMod.LootSpawn.Zone("Test Zone", 0, 0, 0, 100, true);
 
         public bool _isInitialized { get; set; }
 
-        public TestMod()
+        public MainLogic()
         {
             LogEntry("TestMod Created!");
         }
@@ -70,8 +70,8 @@ namespace TestMod
 
             if(counter % 10 == 0)
             {
-                z.Update();
-                var players = z._lastFoundPlayers;
+                //z.Update();
+                //var players = z._lastFoundPlayers;
                 LogEntry("TestMod Tick");
             }
             counter++;
@@ -90,9 +90,9 @@ namespace TestMod
             _isInitialized = true;
             LogEntry("Server started");
 
-            Sandbox.Game.MyVisualScriptLogicProvider.PlayerConnected += PlayerConnected;
-            Sandbox.Game.MyVisualScriptLogicProvider.PlayerDropped += PlayerDropped;
-            Sandbox.Game.MyVisualScriptLogicProvider.PlayerDisconnected += PlayerDisconnected;
+            MyVisualScriptLogicProvider.PlayerConnected += PlayerConnected;
+            MyVisualScriptLogicProvider.PlayerDropped += PlayerDropped;
+            MyVisualScriptLogicProvider.PlayerDisconnected += PlayerDisconnected;
         }
 
         private void PlayerConnected(long playerId)

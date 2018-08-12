@@ -5,7 +5,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{C0FC996F-38B1-4E72-B4ED-6A640684C9F6}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <OutputType>Library</OutputType>
     <RootNamespace>TestMod</RootNamespace>
     <AssemblyName>TestMod</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
@@ -30,6 +30,9 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Sandbox.Common">
@@ -63,9 +66,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Data\Scripts\LootSpawn\Zone.cs" />
-    <Compile Include="Data\Scripts\TestMod.cs" />
-    <Compile Include="Program.cs" />
+    <Compile Include="Data\Scripts\ExpanseMod\LootSpawn\Zone.cs" />
+    <Compile Include="Data\Scripts\ExpanseMod\MainLogic.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

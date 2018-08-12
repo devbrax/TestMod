@@ -4,7 +4,7 @@ using VRage.Game.ModAPI;
 using VRageMath;
 using Sandbox.ModAPI;
 
-namespace TestMod.LootSpawn
+namespace ExpanseMod.LootSpawn
 {
     public class Zone
     {
