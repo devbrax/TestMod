@@ -1,48 +1,30 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Sandbox.Common;
-using Sandbox.Common.ObjectBuilders;
-using Sandbox.Definitions;
-using Sandbox.Game;
-using Sandbox.Game.Entities;
-using Sandbox.Game.EntityComponents;
-using Sandbox.ModAPI.Ingame;
-using Sandbox.ModAPI.Interfaces;
-using SpaceEngineers.Game.ModAPI;
+﻿using Sandbox.Game;
 using VRage.Game;
 using VRage.Game.Components;
-using VRage.Game.Components.Session;
-using VRage.Game.Entity;
-using VRage.Game.ModAPI;
-using VRage.ModAPI;
-using VRage.ObjectBuilders;
 using VRage.Utils;
-using VRageMath;
 using Sandbox.ModAPI;
 using ExpanseMod.LootSpawn;
+using ExpanseMod.Util;
 
 namespace ExpanseMod
 {
     [MySessionComponentDescriptor(MyUpdateOrder.BeforeSimulation)]
     public class MainLogic : MySessionComponentBase
     {
-        int counter = 0;
-        bool debugMode = true;
-        //ExpanseMod.LootSpawn.Zone z = new ExpanseMod.LootSpawn.Zone("Test Zone", 0, 0, 0, 100, true);
+        public Zone _zone { get; set; }
+        int _counter = 0;
+        bool _debugMode = true;
 
         public bool _isInitialized { get; set; }
 
         public MainLogic()
         {
-            LogEntry("TestMod Created!");
+            Logger.Log("TestMod Created!");
         }
 
         public override void BeforeStart()
         {
-            LogEntry("TestMod:BeforeStart called");
+            Logger.Log("TestMod:BeforeStart called");
 
             base.BeforeStart();
         }
@@ -64,14 +46,11 @@ namespace ExpanseMod
                 return;
             }
 
-
-            if(counter % 10 == 0)
+            if(_counter % 10 == 0)
             {
-                //z.Update();
-                //var players = z._lastFoundPlayers;
-                LogEntry("TestMod Tick");
+                _zone.Update();
             }
-            counter++;
+            _counter++;
 
             base.UpdateBeforeSimulation();
         }
@@ -79,13 +58,15 @@ namespace ExpanseMod
         private void Init()
         {
             _isInitialized = true; // Set this first to block any other calls from UpdateBeforeSimulation().
-            LogEntry("TestMod Client Initialized");
+            Logger.Log("TestMod Client Initialized");
+
+            _zone = new Zone("Test Zone", 0, 0, 0, 100, true);
         }
 
         private void InitServer()
         {
             _isInitialized = true;
-            LogEntry("Server started");
+            Logger.Log("Server started");
 
             MyVisualScriptLogicProvider.PlayerConnected += PlayerConnected;
             MyVisualScriptLogicProvider.PlayerDropped += PlayerDropped;
@@ -109,20 +90,9 @@ namespace ExpanseMod
 
         public override void Init(MyObjectBuilder_SessionComponent sessionComponent)
         {
-            LogEntry("TestMod:Init called");
+            Logger.Log("TestMod:Init called");
 
             base.Init(sessionComponent);
-        }
-
-        public void LogEntry(string argument)
-        {
-            if (argument.Contains("Debug") == true && debugMode == false)
-                return;
-
-            MyLog.Default.WriteLineAndConsole("TestMod: " + argument);
-
-            if (debugMode == true)
-                MyVisualScriptLogicProvider.ShowNotificationToAll(argument, 5000, "White");
         }
     }
 }

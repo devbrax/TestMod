@@ -68,6 +68,8 @@
   <ItemGroup>
     <Compile Include="Data\Scripts\ExpanseMod\LootSpawn\Zone.cs" />
     <Compile Include="Data\Scripts\ExpanseMod\MainLogic.cs" />
+    <Compile Include="Data\Scripts\ExpanseMod\Models\ZoneScanResult.cs" />
+    <Compile Include="Data\Scripts\ExpanseMod\Util\Logger.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Data\EntityComponents.sbc">
