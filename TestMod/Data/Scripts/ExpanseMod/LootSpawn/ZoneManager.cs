@@ -63,18 +63,10 @@ namespace ExpanseMod.LootSpawn
             //Check if we need to spawn any new zones
             if(_activeZones.Count < _minZonesToMaintain)
             {
-                var randIndex = (int)_rand.NextDouble() * (_spawnAreas.Count - 1);
-                Logger.Log($"Spawning a zone... picking spawn point #{randIndex}");
-
-                var randomSpawn = _spawnAreas[randIndex];
-                if(TrySpawnZone(_zoneNamePrefix, randomSpawn, _zoneRadius))
-                {
-                    Logger.Log("Zone spawned!");
-                }
-                else
-                {
-                    Logger.Log("Failed to spawn zone! Will try again next tick I guess?");
-                }
+                TrySpawnZone(
+                    _zoneNamePrefix,
+                    _spawnAreas[_rand.Next(0, _spawnAreas.Count)],
+                    _zoneRadius);
             }
         }
 
