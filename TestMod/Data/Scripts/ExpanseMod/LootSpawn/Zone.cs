@@ -14,11 +14,14 @@ namespace ExpanseMod.LootSpawn
 {
     public class Zone
     {
+        //The amount of seconds left before the T:-xx seconds display is added to the GPS
+        private const int _minSecondsToShowCountdown = 45;
         private string _zoneName { get; set; }
         private Vector3D _zonePosition { get; set; }
         private BoundingSphereD _zoneBounds { get; set; }
         private bool _hasGPS { get; set; }
         private IMyGps _GPS { get; set; }
+        public DateTime _expireTime { get; set; }
 
         public ZoneScanResults _lastZoneScan { get; set; }
 
@@ -35,27 +38,31 @@ namespace ExpanseMod.LootSpawn
         private void UpdateStatus(List<IMyPlayer> players)
         {
             var foundShip = _lastZoneScan.FoundShips.FirstOrDefault();
-         
-            _GPS.Name = $"{_zoneName} - P:{_lastZoneScan.CharactersFound} S:{_lastZoneScan.ShipsFound} Dist:{(foundShip.Value != null ? foundShip.Value.DistanceToCenter : -1)}";
+            var additionalText = string.Empty;
+
+            if(_lastZoneScan.ShipsFound > 0)
+                additionalText = _lastZoneScan.ShipsFound.ToString();
+
+            if (_expireTime != DateTime.MinValue)
+            {
+                var timeLeft = (_expireTime - DateTime.Now);
+                if (timeLeft.Seconds < _minSecondsToShowCountdown)
+                {
+                    additionalText += (additionalText.Length > 0 ? " " : string.Empty) + $"T:-{timeLeft.Seconds}";
+                }
+            }
+
+            if(!string.IsNullOrEmpty(additionalText))
+                _GPS.Name = $"{_zoneName} - {additionalText}";
+            else
+                _GPS.Name = _zoneName;
 
             //Modify existing GPS
             foreach (var player in players)
                 MyAPIGateway.Session.GPS.ModifyGps(player.IdentityId, _GPS);
         }
 
-        public Zone(string zoneName, Vector3D position, double radius, bool createGPS = false)
-        {
-            _zoneName = zoneName;
-            _zonePosition = position;
-            _zoneBounds = new BoundingSphereD(_zonePosition, (double)radius);
-            _lastZoneScan = new ZoneScanResults(_zonePosition);
-            _hasGPS = createGPS;
-
-            if (createGPS)
-                CreateGPS(position, zoneName);
-        }
-
-        public Zone(string zoneName, double x, double y, double z, double radius, bool createGPS = false)
+        private void init(string zoneName, double x, double y, double z, double radius, bool createGPS = true)
         {
             var position = new Vector3D(x, y, z);
             _zoneName = zoneName;
@@ -63,9 +70,22 @@ namespace ExpanseMod.LootSpawn
             _zoneBounds = new BoundingSphereD(_zonePosition, (double)radius);
             _lastZoneScan = new ZoneScanResults(_zonePosition);
             _hasGPS = createGPS;
+            _expireTime = DateTime.MinValue;
 
             if (createGPS)
                 CreateGPS(position, zoneName);
+        }
+
+        public Zone(string zoneName, double x, double y, double z, double radius, bool createGPS = true)
+        {
+            init(zoneName, x, y, z, radius, createGPS);
+
+        }
+
+        public Zone(string zoneName, double x, double y, double z, double radius, TimeSpan timeToLive, bool createGPS = true)
+        {
+            init(zoneName, x, y, z, radius, createGPS);
+            _expireTime = DateTime.Now.Add(timeToLive);
         }
 
         //TODO: Don't require players
@@ -103,28 +123,22 @@ namespace ExpanseMod.LootSpawn
             return _lastZoneScan;
         }
 
-        public void Update()
+        public bool Update(List<IMyPlayer> players)
         {
-            //TODO: We can probably used a cached player list to speed this up
-            var players = new List<IMyPlayer>();
-            MyAPIGateway.Players.GetPlayers(players);
-
-            Logger.Log("Doing scan...");
+            //Check if expireTime is defined and see if we need to expire
+            if (_expireTime != DateTime.MinValue && DateTime.Now.CompareTo(_expireTime) > 0)
+            {
+                if(_hasGPS)
+                    MyAPIGateway.Session.GPS.RemoveLocalGps(_GPS);
+                return false;
+            }
 
             Scan(players);
 
-            Logger.Log($"Scan complete. Found {_lastZoneScan.FoundShips.Count} ships");
-
-            //TODO: Check if we should give reward
-
-            //TODO: Seems redundant to send the scan results to both
-            //Do the default behavior for now
-            var resolver = new ZoneOutcomeResolver(_lastZoneScan, new ZoneOutcomeResolverOptions(_lastZoneScan));
-
-            var outcome = resolver.Resolve();
-
             if (_hasGPS)
                 UpdateStatus(players);
+
+            return true;
         }
     }
 }

@@ -67,12 +67,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Data\Scripts\ExpanseMod\LootSpawn\Zone.cs" />
+    <Compile Include="Data\Scripts\ExpanseMod\LootSpawn\ZoneManager.cs" />
     <Compile Include="Data\Scripts\ExpanseMod\LootSpawn\ZoneOutcomeResolver.cs" />
     <Compile Include="Data\Scripts\ExpanseMod\MainLogic.cs" />
     <Compile Include="Data\Scripts\ExpanseMod\Models\ZoneOutcome.cs" />
     <Compile Include="Data\Scripts\ExpanseMod\Models\ZoneOutcomeResolverOptions.cs" />
     <Compile Include="Data\Scripts\ExpanseMod\Models\ZoneScanResultItem.cs" />
     <Compile Include="Data\Scripts\ExpanseMod\Models\ZoneScanResults.cs" />
+    <Compile Include="Data\Scripts\ExpanseMod\Util\BlocksHelper.cs" />
     <Compile Include="Data\Scripts\ExpanseMod\Util\Logger.cs" />
   </ItemGroup>
   <ItemGroup>

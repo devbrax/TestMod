@@ -6,13 +6,16 @@ using Sandbox.ModAPI;
 using ExpanseMod.LootSpawn;
 using ExpanseMod.Util;
 using System;
+using VRage.Game.ModAPI;
+using System.Collections.Generic;
+using VRageMath;
 
 namespace ExpanseMod
 {
     [MySessionComponentDescriptor(MyUpdateOrder.BeforeSimulation)]
     public class MainLogic : MySessionComponentBase
     {
-        public Zone _zone { get; set; }
+        public ZoneManager _zoneManager { get; set; }
         int _counter = 0;
 
         public bool _isInitialized { get; set; }
@@ -58,9 +61,12 @@ namespace ExpanseMod
 
             try
             {
-                if (_counter % 10 == 0)
+                if (_counter % 50 == 0)
                 {
-                    _zone.Update();
+                    var players = new List<IMyPlayer>();
+                    MyAPIGateway.Players.GetPlayers(players);
+
+                    _zoneManager.Update(players);
                 }
             }
             catch(Exception ex)
@@ -78,7 +84,18 @@ namespace ExpanseMod
             _isInitialized = true; // Set this first to block any other calls from UpdateBeforeSimulation().
             Logger.Log("TestMod Client Initialized");
 
-            _zone = new Zone("Test Zone", 0, 0, 0, 100, true);
+            var spawnAreas = new List<Vector3D>
+            {
+                new Vector3D(0,0,0),
+                new Vector3D(5000, 0, 0),
+                new Vector3D(10000, 0, 0),
+                new Vector3D(15000, 0, 0),
+                new Vector3D(20000, 0, 0),
+                new Vector3D(25000, 0, 0),
+                new Vector3D(30000, 0, 0)
+            };
+
+            _zoneManager = new ZoneManager(spawnAreas, "Conflict Zone", 500, new TimeSpan(0,1,0));
         }
 
         private void InitServer()
