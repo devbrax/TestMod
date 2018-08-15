@@ -95,7 +95,7 @@ namespace ExpanseMod
                 new Vector3D(30000, 0, 0)
             };
 
-            _zoneManager = new ZoneManager(spawnAreas, "Conflict Zone", 500, new TimeSpan(0,2,0));
+            _zoneManager = new ZoneManager(spawnAreas, "Conflict Zone", 500, 3, new TimeSpan(0,1,0));
         }
 
         private void InitServer()

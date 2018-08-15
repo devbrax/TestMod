@@ -14,63 +14,74 @@ namespace ExpanseMod.LootSpawn
     public class ZoneManager
     {
         private List<Vector3D> _spawnAreas;
-        private List<Zone> _activeZones;
+        private List<ZoneType> _activeZones;
         private int _minZonesToMaintain;
         private string _zoneNamePrefix;
         private Random _rand;
         private double _zoneRadius;
-        private TimeSpan _zoneTimeToLive;
+        private DateTime _zoneLastSpawnTime = DateTime.MinValue;
+        private TimeSpan _zoneSpawnDelay = new TimeSpan(0,10,0); // Default of 10 minutes
+        private bool _initialSetupComplete = false;
 
-        public ZoneManager(List<Vector3D> spawnAreas, string zoneNamePrefix, double zoneRadius, TimeSpan zoneTimeToLive, int minZonesToMaintain = 3)
+        public ZoneManager(List<Vector3D> spawnAreas, string zoneNamePrefix, double zoneRadius, int minZonesToMaintain = 3, TimeSpan? zoneSpawnDelay = null)
         {
             _minZonesToMaintain = minZonesToMaintain;
-            _activeZones = new List<Zone>();
+            _activeZones = new List<ZoneType>();
             _spawnAreas = spawnAreas;
             _zoneNamePrefix = zoneNamePrefix;
             _rand = new Random();
             _zoneRadius = zoneRadius;
-            _zoneTimeToLive = zoneTimeToLive;
+
+            if (zoneSpawnDelay.HasValue)
+                _zoneSpawnDelay = zoneSpawnDelay.Value;
         }
 
-        public List<Zone> GetActiveZones()
+        public List<ZoneType> GetActiveZones()
         {
             return _activeZones;
         }
 
         public void Update(List<IMyPlayer> players)
         {
-            var zonesToRemove = new List<Zone>();
+            var zonesToRemove = new List<ZoneType>();
 
             foreach(var zone in _activeZones)
-            {
                 //Update and check if the zone has expired
-                if (!zone.Update(players))
-                {
-                    //Zone is expiring so process results and give rewards
-                    //TODO: Seems redundant to send the scan results to both
-                    var resolver = new ZoneOutcomeResolver(zone._lastZoneScan, new ZoneOutcomeResolverOptions(zone._lastZoneScan));
-                    var outcome = resolver.Resolve();
+                if (zone.Update(players) == ZoneType.ZoneUpdateResult.Timeout)
                     zonesToRemove.Add(zone);
-                }
-            }
 
             //Remove flagged zones
             foreach(var zoneToRemove in zonesToRemove)
-            {
                 _activeZones.Remove(zoneToRemove);
+
+            //Check if we need to spawn any new zones and if we should wait
+            if (_activeZones.Count < _minZonesToMaintain 
+                && (_zoneLastSpawnTime.Add(_zoneSpawnDelay).CompareTo(DateTime.Now) < 0
+                    || _initialSetupComplete == false))
+            {
+                //Try and spawn a zone
+                var position = GetAvailableSpawnZone(_spawnAreas[_rand.Next(0, _spawnAreas.Count)], _zoneRadius);
+                if (position != Vector3D.MinValue)
+                {
+                    //Create the new zone
+                    var zone = new ConflictZone(position, _zoneRadius);
+
+                    //Add to tracked zones
+                    _activeZones.Add(zone);
+                }
             }
 
-            //Check if we need to spawn any new zones
-            if(_activeZones.Count < _minZonesToMaintain)
+            //Complete initial setup if we have 3
+            if (_activeZones.Count == _minZonesToMaintain)
             {
-                TrySpawnZone(
-                    _zoneNamePrefix,
-                    _spawnAreas[_rand.Next(0, _spawnAreas.Count)],
-                    _zoneRadius);
+                _initialSetupComplete = true;
+
+                //Keep track of the last time we spawned enough zones
+                _zoneLastSpawnTime = DateTime.Now;
             }
         }
 
-        public bool TrySpawnZone(string zoneName, Vector3D position, double radius, double randomOffset = 50000, int maxAttempts = 5, bool createGPS = true)
+        public Vector3D GetAvailableSpawnZone(Vector3D position, double radius, double randomOffset = 50000, int maxAttempts = 5)
         {
             var attempts = 0;
 
@@ -86,22 +97,14 @@ namespace ExpanseMod.LootSpawn
 
                 if (allEntities.Count == 0)
                 {
-                    Logger.Log("Found a place to spawn a zone!");
-
-                    //Create the new zone
-                    var zone = new Zone(zoneName, randX, randY, randZ, radius, _zoneTimeToLive, createGPS);
-
-                    //Add to tracked zones
-                    _activeZones.Add(zone);
-
-                    return true;
+                    return new Vector3D(randX, randY, randZ);
                 }
 
                 attempts++;
                 Logger.Log($"Couldn't spawn zone at {randX}, {randY}, {randZ} trying again. Attempt # {attempts}");
             } while (attempts < maxAttempts);
 
-            return false;
+            return Vector3D.MinValue;
         }
     }
 }
