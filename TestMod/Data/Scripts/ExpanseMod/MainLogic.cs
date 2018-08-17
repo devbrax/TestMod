@@ -82,20 +82,13 @@ namespace ExpanseMod
         private void Init()
         {
             _isInitialized = true; // Set this first to block any other calls from UpdateBeforeSimulation().
+
+            //Load configuration
+            Config.LoadConfig();
+
+            _zoneManager = new ZoneManager(Config.Zone_SpawnAreas, Config.Zone_MaxZones, new TimeSpan(0,Config.Zone_SpawnTimeoutMinutes, 0));
+
             Logger.Log("TestMod Client Initialized");
-
-            var spawnAreas = new List<Vector3D>
-            {
-                new Vector3D(0,0,0),
-                new Vector3D(5000, 0, 0),
-                new Vector3D(10000, 0, 0),
-                new Vector3D(15000, 0, 0),
-                new Vector3D(20000, 0, 0),
-                new Vector3D(25000, 0, 0),
-                new Vector3D(30000, 0, 0)
-            };
-
-            _zoneManager = new ZoneManager(spawnAreas, "Conflict Zone", 500, 3, new TimeSpan(0,1,0));
         }
 
         private void InitServer()
@@ -112,7 +105,7 @@ namespace ExpanseMod
         {
 
         }
-
+            
         private void PlayerDropped(string itemTypeName, string itemSubTypeName, long playerId, int amount)
         {
 

@@ -14,19 +14,19 @@ using VRageMath;
 
 namespace ExpanseMod.LootSpawn
 {
-    public class ConflictZone : ZoneType
+    public class IndustrialZone : ZoneType
     {
         private static TimeSpan _timeToLive = new TimeSpan(0, Config.Zone_TimeToLiveMinutes, 0); //Default of 10 minutes
         private ZoneItemReward _reward { get; set; }
 
-        public ConflictZone(Vector3D position, double radius) 
-            : base("Conflict Zone", position, radius, _timeToLive, true)
+        public IndustrialZone(Vector3D position, double radius) 
+            : base("Resource Extraction Site", position, radius, _timeToLive, true)
         {
             //TODO: Make the reward configurable
             _reward = new ZoneItemReward()
             {
                 ItemCount = 1,
-                ItemDefinition = new MyDefinitionId(typeof(MyObjectBuilder_Ore), Config.Zone_MilitaryReward)
+                ItemDefinition = new MyDefinitionId(typeof(MyObjectBuilder_Ore), Config.Zone_IndustryReward)
             };
         }
 

@@ -66,6 +66,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Data\Scripts\ExpanseMod\LootSpawn\IndustrialZone.cs" />
+    <Compile Include="Data\Scripts\ExpanseMod\LootSpawn\ScienceZone.cs" />
     <Compile Include="Data\Scripts\ExpanseMod\LootSpawn\ConflictZone.cs" />
     <Compile Include="Data\Scripts\ExpanseMod\LootSpawn\ZoneType.cs" />
     <Compile Include="Data\Scripts\ExpanseMod\LootSpawn\ZoneManager.cs" />
@@ -74,6 +76,7 @@
     <Compile Include="Data\Scripts\ExpanseMod\Models\ZoneOutcome.cs" />
     <Compile Include="Data\Scripts\ExpanseMod\Models\ZoneScanResultItem.cs" />
     <Compile Include="Data\Scripts\ExpanseMod\Models\ZoneScanResults.cs" />
+    <Compile Include="Data\Scripts\ExpanseMod\Util\Config.cs" />
     <Compile Include="Data\Scripts\ExpanseMod\Util\Utilities.cs" />
     <Compile Include="Data\Scripts\ExpanseMod\Util\Logger.cs" />
   </ItemGroup>

@@ -13,13 +13,13 @@ namespace ExpanseMod.LootSpawn
         public enum ZoneUpdateResult { Success, Failure, Timeout };
         //The amount of seconds left before the T:-xx seconds display is added to the GPS
         protected const int _minSecondsToShowCountdown = 45;
-        protected string _zoneName { get; set; }
+        
         protected Vector3D _zonePosition { get; set; }
         protected BoundingSphereD _zoneBounds { get; set; }
         protected bool _hasGPS { get; set; }
         protected IMyGps _GPS { get; set; }
 
-
+        public string _zoneName { get; set; }
         public DateTime _expireTime { get; set; }
         public ZoneScanResults _lastZoneScan { get; set; }
 
@@ -37,11 +37,6 @@ namespace ExpanseMod.LootSpawn
 
             if (createGPS)
                 _GPS = Utilities.CreateGPS(position, zoneName);
-        }
-
-        public ZoneType(string zoneName, Vector3D position, double radius, bool createGPS = true)
-        {
-            init(zoneName, position, radius, createGPS);
         }
 
         public ZoneType(string zoneName, Vector3D position, double radius, TimeSpan timeToLive, bool createGPS = true)
