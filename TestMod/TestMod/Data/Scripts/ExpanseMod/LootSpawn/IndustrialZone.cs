@@ -14,19 +14,19 @@ using VRageMath;
 
 namespace ExpanseMod.LootSpawn
 {
-    public class ConflictZone : ZoneType
+    public class IndustrialZone : ZoneType
     {
         private static TimeSpan _timeToLive = new TimeSpan(0, Config.Zone_TimeToLiveMinutes, 0); //Default of 10 minutes
         private ZoneItemReward _reward { get; set; }
 
-        public ConflictZone(Vector3D position, double radius) 
-            : base("Conflict Zone", position, radius, _timeToLive, true)
+        public IndustrialZone(Vector3D origin, Vector3D position, double radius) 
+            : base("Resource Extraction Site", origin, position, radius, _timeToLive, true)
         {
             //TODO: Make the reward configurable
             _reward = new ZoneItemReward()
             {
-                ItemCount = 1,
-                ItemDefinition = new MyDefinitionId(typeof(MyObjectBuilder_Ore), Config.Zone_MilitaryReward)
+                ItemCount = Config.Zone_IndustryRewardCount,
+                ItemDefinition = new MyDefinitionId(typeof(MyObjectBuilder_Component), Config.Zone_IndustryReward)
             };
         }
 
@@ -97,11 +97,15 @@ namespace ExpanseMod.LootSpawn
             if (_expireTime != DateTime.MinValue)
             {
                 var timeLeft = (_expireTime - DateTime.Now);
-                if (timeLeft.TotalSeconds < _minSecondsToShowCountdown)
-                {
-                    additionalText += (additionalText.Length > 0 ? " " : string.Empty) + $"T:-{timeLeft.Seconds}";
-                }
+                //if (timeLeft.TotalSeconds < _minSecondsToShowCountdown)
+                //{
+                var totalMinutes = Math.Round(timeLeft.TotalMinutes);
+                var totalSeconds = Math.Round(timeLeft.TotalSeconds);
+                var timeLeftDisplay = (totalSeconds >= 60 ? totalMinutes + "m" : totalSeconds + "s");
+                additionalText += (additionalText.Length > 0 ? " " : string.Empty) + $"T:-{timeLeftDisplay}";
+                //}
             }
+
 
             if (!string.IsNullOrEmpty(additionalText))
                 _GPS.Name = $"{_zoneName} {additionalText}";

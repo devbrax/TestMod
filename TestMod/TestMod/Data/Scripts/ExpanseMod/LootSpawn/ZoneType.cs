@@ -12,13 +12,14 @@ namespace ExpanseMod.LootSpawn
     {
         public enum ZoneUpdateResult { Success, Failure, Timeout };
         //The amount of seconds left before the T:-xx seconds display is added to the GPS
-        protected const int _minSecondsToShowCountdown = 45;
+        //protected const int _minSecondsToShowCountdown = 45;
         
         protected Vector3D _zonePosition { get; set; }
         protected BoundingSphereD _zoneBounds { get; set; }
         protected bool _hasGPS { get; set; }
         protected IMyGps _GPS { get; set; }
 
+        public Vector3D _zoneOrigin { get; set; }
         public string _zoneName { get; set; }
         public DateTime _expireTime { get; set; }
         public ZoneScanResults _lastZoneScan { get; set; }
@@ -26,9 +27,10 @@ namespace ExpanseMod.LootSpawn
 
         protected abstract void UpdateGPS(List<IMyPlayer> players);
 
-        private void init(string zoneName, Vector3D position, double radius, bool createGPS = true)
+        private void init(string zoneName, Vector3D origin, Vector3D position, double radius, bool createGPS = true)
         {
             _zoneName = zoneName;
+            _zoneOrigin = origin;
             _zonePosition = position;
             _zoneBounds = new BoundingSphereD(_zonePosition, (double)radius);
             _lastZoneScan = new ZoneScanResults(_zonePosition);
@@ -39,10 +41,11 @@ namespace ExpanseMod.LootSpawn
                 _GPS = Utilities.CreateGPS(position, zoneName);
         }
 
-        public ZoneType(string zoneName, Vector3D position, double radius, TimeSpan timeToLive, bool createGPS = true)
+        public ZoneType(string zoneName, Vector3D origin, Vector3D position, double radius, TimeSpan timeToLive, bool createGPS = true)
         {
-            init(zoneName, position, radius, createGPS);
+            init(zoneName, origin, position, radius, createGPS);
             _expireTime = DateTime.Now.Add(timeToLive);
+            Logger.Log($"Creating zone with timeout at {_expireTime}");
         }
 
         //TODO: Don't require players
