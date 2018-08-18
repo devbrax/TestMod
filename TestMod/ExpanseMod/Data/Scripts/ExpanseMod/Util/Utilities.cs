@@ -19,9 +19,10 @@ using ExpanseMod.Models;
 
 namespace ExpanseMod.Util
 {
-    //TODO: This name sucks
     public static class Utilities
     {
+        public static Config Config;
+
         public static bool InventoryAdd(IMyInventory inventory, MyFixedPoint amount, MyDefinitionId definitionId)
         {
             var content = (MyObjectBuilder_PhysicalObject)MyObjectBuilderSerializer.CreateNewObject(definitionId);
@@ -37,6 +38,34 @@ namespace ExpanseMod.Util
             // Inventory full. Could not add the item.
             return false;
         }
+
+        public static Config SaveConfig(string configFileName)
+        {
+            var cfg = MyAPIGateway.Utilities.WriteFileInGlobalStorage(configFileName);
+            var data = MyAPIGateway.Utilities.SerializeToXML(Config);
+            cfg.Write(data);
+            cfg.Flush();
+            cfg.Close();
+
+            return Config;
+        }
+
+        public static Config ReadConfigFile(string configFileName)
+        {
+            //If the config file doesn't exist, create it
+            if (!MyAPIGateway.Utilities.FileExistsInGlobalStorage(configFileName))
+            {
+                //Initialize a default config
+                Config = new Config();
+                return SaveConfig(configFileName);
+            }
+
+            var configXml = MyAPIGateway.Utilities.ReadFileInGlobalStorage(configFileName);
+            Config = MyAPIGateway.Utilities.SerializeFromXML<Config>(configXml.ReadToEnd());
+
+            return Config;
+        }
+
 
         public static IMyGps CreateGPS(Vector3D position, string gpsName)
         {

@@ -66,31 +66,32 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="TestMod\Data\Scripts\ExpanseMod\LootSpawn\IndustrialZone.cs" />
-    <Compile Include="TestMod\Data\Scripts\ExpanseMod\LootSpawn\ScienceZone.cs" />
-    <Compile Include="TestMod\Data\Scripts\ExpanseMod\LootSpawn\ConflictZone.cs" />
-    <Compile Include="TestMod\Data\Scripts\ExpanseMod\LootSpawn\ZoneType.cs" />
-    <Compile Include="TestMod\Data\Scripts\ExpanseMod\LootSpawn\ZoneManager.cs" />
-    <Compile Include="TestMod\Data\Scripts\ExpanseMod\MainLogic.cs" />
-    <Compile Include="TestMod\Data\Scripts\ExpanseMod\Models\ZoneItemReward.cs" />
-    <Compile Include="TestMod\Data\Scripts\ExpanseMod\Models\ZoneOutcome.cs" />
-    <Compile Include="TestMod\Data\Scripts\ExpanseMod\Models\ZoneScanResultItem.cs" />
-    <Compile Include="TestMod\Data\Scripts\ExpanseMod\Models\ZoneScanResults.cs" />
-    <Compile Include="TestMod\Data\Scripts\ExpanseMod\Util\Config.cs" />
-    <Compile Include="TestMod\Data\Scripts\ExpanseMod\Util\Utilities.cs" />
-    <Compile Include="TestMod\Data\Scripts\ExpanseMod\Util\Logger.cs" />
+    <Compile Include="ExpanseMod\Data\Scripts\ExpanseMod\LootSpawn\IndustrialZone.cs" />
+    <Compile Include="ExpanseMod\Data\Scripts\ExpanseMod\LootSpawn\ScienceZone.cs" />
+    <Compile Include="ExpanseMod\Data\Scripts\ExpanseMod\LootSpawn\ConflictZone.cs" />
+    <Compile Include="ExpanseMod\Data\Scripts\ExpanseMod\LootSpawn\ZoneType.cs" />
+    <Compile Include="ExpanseMod\Data\Scripts\ExpanseMod\LootSpawn\ZoneManager.cs" />
+    <Compile Include="ExpanseMod\Data\Scripts\ExpanseMod\MainLogic.cs" />
+    <Compile Include="ExpanseMod\Data\Scripts\ExpanseMod\Models\ZoneItemReward.cs" />
+    <Compile Include="ExpanseMod\Data\Scripts\ExpanseMod\Models\ZoneOutcome.cs" />
+    <Compile Include="ExpanseMod\Data\Scripts\ExpanseMod\Models\ZoneScanResultItem.cs" />
+    <Compile Include="ExpanseMod\Data\Scripts\ExpanseMod\Models\ZoneScanResults.cs" />
+    <Compile Include="ExpanseMod\Data\Scripts\ExpanseMod\Util\Config.cs" />
+    <Compile Include="ExpanseMod\Data\Scripts\ExpanseMod\Util\Utilities.cs" />
+    <Compile Include="ExpanseMod\Data\Scripts\ExpanseMod\Util\Logger.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="TestMod\Data\EntityComponents.sbc">
+    <None Include="ExpanseMod\Data\EntityComponents.sbc">
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
+    <Folder Include="VRage\Game\Components\Session\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>xcopy "$(ProjectDir)TestMod\*" "C:\Users\brax\AppData\Roaming\SpaceEngineers\Mods\$(ProjectName)\" /F /R /Y /I /E</PostBuildEvent>
+    <PostBuildEvent>xcopy "$(ProjectDir)ExpanseMod\*" "C:\Users\brax\AppData\Roaming\SpaceEngineers\Mods\$(ProjectName)\" /F /R /Y /I /E</PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
     <PreBuildEvent>

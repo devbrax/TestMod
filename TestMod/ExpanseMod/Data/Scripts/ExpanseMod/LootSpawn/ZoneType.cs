@@ -18,12 +18,12 @@ namespace ExpanseMod.LootSpawn
         protected BoundingSphereD _zoneBounds { get; set; }
         protected bool _hasGPS { get; set; }
         protected IMyGps _GPS { get; set; }
+        protected TimeSpan _timeToLive; //Default of 10 minutes
 
         public Vector3D _zoneOrigin { get; set; }
         public string _zoneName { get; set; }
         public DateTime _expireTime { get; set; }
         public ZoneScanResults _lastZoneScan { get; set; }
-
 
         protected abstract void UpdateGPS(List<IMyPlayer> players);
 
@@ -45,7 +45,7 @@ namespace ExpanseMod.LootSpawn
         {
             init(zoneName, origin, position, radius, createGPS);
             _expireTime = DateTime.Now.Add(timeToLive);
-            Logger.Log($"Creating zone with timeout at {_expireTime}");
+            _timeToLive = timeToLive;
         }
 
         //TODO: Don't require players
@@ -66,7 +66,6 @@ namespace ExpanseMod.LootSpawn
                 return ZoneUpdateResult.Timeout;
             }
 
-            //TODO: Set up how often the zone scans for
             Scan(players);
 
             if (_hasGPS)

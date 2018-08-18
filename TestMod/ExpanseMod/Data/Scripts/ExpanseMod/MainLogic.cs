@@ -15,20 +15,25 @@ namespace ExpanseMod
     [MySessionComponentDescriptor(MyUpdateOrder.BeforeSimulation)]
     public class MainLogic : MySessionComponentBase
     {
+        private string _configFileName = "TheExpanseZones.cfg";
+
+        public static bool mpActive => MyAPIGateway.Multiplayer.MultiplayerActive;
+        public static bool isServer => MyAPIGateway.Multiplayer.IsServer;
+        public static bool isDedicatedServer => MyAPIGateway.Utilities.IsDedicated;
+
         public ZoneManager _zoneManager { get; set; }
         int _counter = 0;
+
 
         public bool _isInitialized { get; set; }
 
         public MainLogic()
         {
-            Logger.Log("TestMod Created!");
+            
         }
 
         public override void BeforeStart()
         {
-            Logger.Log("TestMod:BeforeStart called");
-
             base.BeforeStart();
         }
 
@@ -59,22 +64,25 @@ namespace ExpanseMod
                 return;
             }
 
-            try
+            if (isServer || isDedicatedServer)
             {
-                if (_counter % 50 == 0)
+                try
                 {
-                    var players = new List<IMyPlayer>();
-                    MyAPIGateway.Players.GetPlayers(players);
+                    if (_counter % 50 == 0)
+                    {
+                        var players = new List<IMyPlayer>();
+                        MyAPIGateway.Players.GetPlayers(players);
 
-                    _zoneManager.Update(players);
+                        _zoneManager.Update(players);
+                    }
                 }
+                catch (Exception ex)
+                {
+                    Logger.Log($"A fatal exception was thrown during game logic. {ex.Message} {ex.StackTrace}");
+                }
+
+                _counter++;
             }
-            catch(Exception ex)
-            {
-                Logger.Log($"A fatal exception was thrown during game logic. {ex.Message} {ex.StackTrace}");
-            }
-            
-            _counter++;
 
             base.UpdateBeforeSimulation();
         }
@@ -83,12 +91,12 @@ namespace ExpanseMod
         {
             _isInitialized = true; // Set this first to block any other calls from UpdateBeforeSimulation().
 
-            //Load configuration
-            Config.LoadConfig();
+            //Load configuration. This must be done before anything is initialized
+            Utilities.ReadConfigFile(_configFileName);
 
-            _zoneManager = new ZoneManager(Config.Zone_SpawnAreas, Config.Zone_MaxZones, new TimeSpan(0,Config.Zone_SpawnTimeoutMinutes, 0));
+            _zoneManager = new ZoneManager(Utilities.Config.Zone_SpawnAreas, Utilities.Config.Zone_MaxZones, new TimeSpan(0, Utilities.Config.Zone_SpawnTimeoutMinutes, 0));
 
-            Logger.Log("TestMod Client Initialized");
+            Logger.Log("Expanse Zones Client Initialized");
         }
 
         private void InitServer()
@@ -118,8 +126,6 @@ namespace ExpanseMod
 
         public override void Init(MyObjectBuilder_SessionComponent sessionComponent)
         {
-            Logger.Log("TestMod:Init called");
-
             base.Init(sessionComponent);
         }
     }

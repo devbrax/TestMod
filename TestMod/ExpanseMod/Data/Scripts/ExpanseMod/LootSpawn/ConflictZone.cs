@@ -14,19 +14,17 @@ using VRageMath;
 
 namespace ExpanseMod.LootSpawn
 {
-    public class IndustrialZone : ZoneType
+    public class ConflictZone : ZoneType
     {
-        private static TimeSpan _timeToLive = new TimeSpan(0, Config.Zone_TimeToLiveMinutes, 0); //Default of 10 minutes
         private ZoneItemReward _reward { get; set; }
 
-        public IndustrialZone(Vector3D origin, Vector3D position, double radius) 
-            : base("Resource Extraction Site", origin, position, radius, _timeToLive, true)
+        public ConflictZone(Vector3D origin, Vector3D position, double radius) 
+            : base("Conflict Zone", origin, position, radius, new TimeSpan(0, Utilities.Config.Zone_TimeToLiveMinutes, 0), true)
         {
-            //TODO: Make the reward configurable
             _reward = new ZoneItemReward()
             {
-                ItemCount = Config.Zone_IndustryRewardCount,
-                ItemDefinition = new MyDefinitionId(typeof(MyObjectBuilder_Component), Config.Zone_IndustryReward)
+                ItemCount = Utilities.Config.Zone_MilitaryRewardCount,
+                ItemDefinition = new MyDefinitionId(typeof(MyObjectBuilder_Component), Utilities.Config.Zone_MilitaryReward)
             };
         }
 
@@ -49,7 +47,7 @@ namespace ExpanseMod.LootSpawn
             }
             catch(Exception ex)
             {
-                //TODO: Log exception
+                Logger.Log($"An exception occured when updating Conflict Zone. Ex: {ex.Source} : {ex.Message} {ex.StackTrace}");
                 return ZoneUpdateResult.Failure;
             }
         }
@@ -99,13 +97,12 @@ namespace ExpanseMod.LootSpawn
                 var timeLeft = (_expireTime - DateTime.Now);
                 //if (timeLeft.TotalSeconds < _minSecondsToShowCountdown)
                 //{
-                var totalMinutes = Math.Round(timeLeft.TotalMinutes);
-                var totalSeconds = Math.Round(timeLeft.TotalSeconds);
-                var timeLeftDisplay = (totalSeconds >= 60 ? totalMinutes + "m" : totalSeconds + "s");
-                additionalText += (additionalText.Length > 0 ? " " : string.Empty) + $"T:-{timeLeftDisplay}";
+                    var totalMinutes = Math.Round(timeLeft.TotalMinutes);
+                    var totalSeconds = Math.Round(timeLeft.TotalSeconds);
+                    var timeLeftDisplay = (totalSeconds >= 60 ? totalMinutes + "m" : totalSeconds + "s");
+                    additionalText += (additionalText.Length > 0 ? " " : string.Empty) + $"T:-{timeLeftDisplay}";
                 //}
             }
-
 
             if (!string.IsNullOrEmpty(additionalText))
                 _GPS.Name = $"{_zoneName} {additionalText}";
@@ -114,9 +111,14 @@ namespace ExpanseMod.LootSpawn
 
             //Modify existing GPS
             foreach (var player in players)
-                MyAPIGateway.Session.GPS.ModifyGps(player.IdentityId, _GPS);
-
-            //TODO: We should check if we need to create new GPS? What happens to the above line when a player joins after the initial GPS is created?
+            {
+                //Check if all players have the GPS coordinate
+                var gpsList = MyAPIGateway.Session.GPS.GetGpsList(player.IdentityId);
+                if(!gpsList.Any(g => g.Hash.Equals(_GPS.Hash)))
+                    MyAPIGateway.Session.GPS.AddLocalGps(_GPS);
+                else
+                    MyAPIGateway.Session.GPS.ModifyGps(player.IdentityId, _GPS);
+            }
         }
     }
 }

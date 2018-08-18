@@ -22,7 +22,7 @@ namespace ExpanseMod.LootSpawn
         private int _minZonesToMaintain;
         private Random _rand;
         private DateTime _zoneLastSpawnTime = DateTime.MinValue;
-        private TimeSpan _zoneSpawnDelay = new TimeSpan(0,10,0); // Default of 10 minutes
+        private TimeSpan _zoneSpawnDelay;
         private bool _initialSetupComplete = false;
 
 
@@ -90,7 +90,7 @@ namespace ExpanseMod.LootSpawn
                 var randIndex = _rand.Next(0, availableSpawnAreas.Count);
                 var origin = availableSpawnAreas[randIndex];
                 
-                var position = GetAvailableSpawnZone(origin, Config.Zone_SpawnScanRadiusMeters, Config.Zone_SpawnRandomOffset, Config.Zone_SpawnMaxAttempts);
+                var position = GetAvailableSpawnZone(origin, Utilities.Config.Zone_SpawnScanRadiusMeters, Utilities.Config.Zone_SpawnRandomOffset, Utilities.Config.Zone_SpawnMaxAttempts);
                 if (!position.Equals(Vector3D.MinValue))
                 {
                     //Pick a random type of Zone
@@ -101,15 +101,15 @@ namespace ExpanseMod.LootSpawn
                     switch(zoneType)
                     {
                         case ZoneTypes.Military:
-                            newZone = new ConflictZone(origin, position, Config.Zone_MilitaryRadius);
+                            newZone = new ConflictZone(origin, position, Utilities.Config.Zone_MilitaryRadius);
                             break;
 
                         case ZoneTypes.Industrial:
-                            newZone = new IndustrialZone(origin, position, Config.Zone_IndustryRadius);
+                            newZone = new IndustrialZone(origin, position, Utilities.Config.Zone_IndustryRadius);
                             break;
 
                         case ZoneTypes.Science:
-                            newZone = new ScienceZone(origin, position, Config.Zone_ScienceRadius);
+                            newZone = new ScienceZone(origin, position, Utilities.Config.Zone_ScienceRadius);
                             break;
                         default:
                             throw new Exception($"Unknown zone type {zoneType}");
@@ -128,8 +128,6 @@ namespace ExpanseMod.LootSpawn
                     _zoneLastSpawnTime = DateTime.Now;
                 }
             }
-
-            
         }
 
         public Vector3D GetAvailableSpawnZone(Vector3D position, double radius, double randomOffset, int maxAttempts)

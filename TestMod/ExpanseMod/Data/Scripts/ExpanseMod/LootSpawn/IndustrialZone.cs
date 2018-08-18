@@ -14,19 +14,17 @@ using VRageMath;
 
 namespace ExpanseMod.LootSpawn
 {
-    public class ScienceZone : ZoneType
+    public class IndustrialZone : ZoneType
     {
-        private static TimeSpan _timeToLive = new TimeSpan(0, Config.Zone_TimeToLiveMinutes, 0); //Default of 10 minutes
         private ZoneItemReward _reward { get; set; }
 
-        public ScienceZone(Vector3D origin, Vector3D position, double radius) 
-            : base("Research Site", origin, position, radius, _timeToLive, true)
+        public IndustrialZone(Vector3D origin, Vector3D position, double radius) 
+            : base("Resource Extraction Site", origin, position, radius, new TimeSpan(0, Utilities.Config.Zone_TimeToLiveMinutes, 0), true)
         {
-            //TODO: Make the reward configurable
             _reward = new ZoneItemReward()
             {
-                ItemCount = Config.Zone_ScienceRewardCount,
-                ItemDefinition = new MyDefinitionId(typeof(MyObjectBuilder_Component), Config.Zone_ScienceReward)
+                ItemCount = Utilities.Config.Zone_IndustryRewardCount,
+                ItemDefinition = new MyDefinitionId(typeof(MyObjectBuilder_Component), Utilities.Config.Zone_IndustryReward)
             };
         }
 
@@ -41,7 +39,7 @@ namespace ExpanseMod.LootSpawn
                     if (_lastZoneScan.ShipsFound > 0)
                         GiveItemToClosestShip();
 
-                    //We've reached our win condition so this zone is done!
+                    //We've reached our win condition so this conflict zone is done!
                     return ZoneUpdateResult.Timeout;
                 }
                 
@@ -49,7 +47,7 @@ namespace ExpanseMod.LootSpawn
             }
             catch(Exception ex)
             {
-                //TODO: Log exception
+                Logger.Log($"An exception occured when updating Conflict Zone. Ex: {ex.Source} : {ex.Message} {ex.StackTrace}");
                 return ZoneUpdateResult.Failure;
             }
         }
@@ -106,7 +104,6 @@ namespace ExpanseMod.LootSpawn
                 //}
             }
 
-
             if (!string.IsNullOrEmpty(additionalText))
                 _GPS.Name = $"{_zoneName} {additionalText}";
             else
@@ -114,9 +111,14 @@ namespace ExpanseMod.LootSpawn
 
             //Modify existing GPS
             foreach (var player in players)
-                MyAPIGateway.Session.GPS.ModifyGps(player.IdentityId, _GPS);
-
-            //TODO: We should check if we need to create new GPS? What happens to the above line when a player joins after the initial GPS is created?
+            {
+                //Check if all players have the GPS coordinate
+                var gpsList = MyAPIGateway.Session.GPS.GetGpsList(player.IdentityId);
+                if (!gpsList.Any(g => g.Hash.Equals(_GPS.Hash)))
+                    MyAPIGateway.Session.GPS.AddLocalGps(_GPS);
+                else
+                    MyAPIGateway.Session.GPS.ModifyGps(player.IdentityId, _GPS);
+            }
         }
     }
 }
