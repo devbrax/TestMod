@@ -23,7 +23,7 @@ namespace ExpanseMod.LootSpawn
         public DateTime _expireTime { get; set; }
         public ZoneScanResults _lastZoneScan { get; set; }
 
-        protected abstract void UpdateGPS(List<IMyPlayer> players);
+        //protected abstract void UpdateGPS(List<IMyPlayer> players);
 
         private void init(string zoneName, Vector3D origin, Vector3D position, double radius, TimeSpan timeToLive, bool createGPS = true)
         {
@@ -39,12 +39,7 @@ namespace ExpanseMod.LootSpawn
 
             if (createGPS)
             {
-                _GPS = MyAPIGateway.Session.GPS.Create(zoneName,
-                                                     "GPS",
-                                                     position,
-                                                     true, false);
-
-                PlayerGPSManager.Server_AddGlobalGPS(_GPS, _expireTime);
+                ServerGPSManager.Server_AddGlobalGPS(position.X, position.Y, position.Z, zoneName, (_expireTime - DateTime.Now).TotalSeconds);
             }
         }
 
@@ -65,18 +60,23 @@ namespace ExpanseMod.LootSpawn
             //Check if expireTime is defined and see if we need to expire
             if (_expireTime != DateTime.MinValue && DateTime.Now.CompareTo(_expireTime) > 0)
             {
-                if (_hasGPS)
-                    PlayerGPSManager.Server_RemoveGlobalGPS(_GPS);
+                //if (_hasGPS)
+                   //PlayerGPSManager.Server_RemoveGlobalGPS(_GPS);
 
                 return ZoneUpdateResult.Timeout;
             }
 
             Scan(players);
 
-            if (_hasGPS)
-                UpdateGPS(players);
+            //if (_hasGPS)
+            //    UpdateGPS(players);
 
             return ZoneUpdateResult.Success;
+        }
+
+        public Vector3D GetPosition()
+        {
+            return _zonePosition;
         }
     }
 }

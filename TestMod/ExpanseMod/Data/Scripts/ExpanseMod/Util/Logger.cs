@@ -11,8 +11,6 @@ namespace ExpanseMod.Util
 {
     public static class Logger
     {
-        private static bool _debugMode = true;
-
         public static void Log(string msg)
         {
             var whoAmI = MyAPIGateway.Session.IsServer ? "Server" : "Player ID: " + (MyAPIGateway.Session.Player != null ? MyAPIGateway.Session.Player.IdentityId : -1);

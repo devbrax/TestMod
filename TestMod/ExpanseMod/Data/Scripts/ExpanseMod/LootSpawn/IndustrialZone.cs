@@ -85,28 +85,28 @@ namespace ExpanseMod.LootSpawn
 
 
         //This function is to be executed after a scan
-        protected override void UpdateGPS(List<IMyPlayer> players)
-        {
-            var additionalText = string.Empty;
+        //protected override void UpdateGPS(List<IMyPlayer> players)
+        //{
+        //    var additionalText = string.Empty;
 
-            if (_lastZoneScan.ShipsFound > 0)
-                additionalText = $"[{_lastZoneScan.ShipsFound.ToString()}]";
+        //    if (_lastZoneScan.ShipsFound > 0)
+        //        additionalText = $"[{_lastZoneScan.ShipsFound.ToString()}]";
 
-            if (_expireTime != DateTime.MinValue)
-            {
-                var timeLeft = (_expireTime - DateTime.Now);
-                var totalMinutes = Math.Round(timeLeft.TotalMinutes);
-                var totalSeconds = Math.Round(timeLeft.TotalSeconds);
-                var timeLeftDisplay = (totalSeconds >= 60 ? totalMinutes + "m" : totalSeconds + "s");
-                additionalText += (additionalText.Length > 0 ? " " : string.Empty) + $"T:-{timeLeftDisplay}";
-            }
+        //    if (_expireTime != DateTime.MinValue)
+        //    {
+        //        var timeLeft = (_expireTime - DateTime.Now);
+        //        var totalMinutes = Math.Round(timeLeft.TotalMinutes);
+        //        var totalSeconds = Math.Round(timeLeft.TotalSeconds);
+        //        var timeLeftDisplay = (totalSeconds >= 60 ? totalMinutes + "m" : totalSeconds + "s");
+        //        additionalText += (additionalText.Length > 0 ? " " : string.Empty) + $"T:-{timeLeftDisplay}";
+        //    }
 
-            if (!string.IsNullOrEmpty(additionalText))
-                _GPS.Name = $"{_zoneName} {additionalText}";
-            else
-                _GPS.Name = _zoneName;
+        //    if (!string.IsNullOrEmpty(additionalText))
+        //        _GPS.Name = $"{_zoneName} {additionalText}";
+        //    else
+        //        _GPS.Name = _zoneName;
 
-            PlayerGPSManager.Server_UpdateGPS(_GPS);
-        }
+        //    PlayerGPSManager.Server_UpdateGPS(_GPS);
+        //}
     }
 }

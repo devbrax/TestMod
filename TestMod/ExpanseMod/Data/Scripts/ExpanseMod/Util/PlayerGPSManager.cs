@@ -1,4 +1,5 @@
 ﻿using ExpanseMod.Models;
+using Sandbox.Game;
 using Sandbox.ModAPI;
 using System;
 using System.Collections.Generic;
@@ -6,31 +7,24 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VRage;
 using VRage.Game.ModAPI;
 
 namespace ExpanseMod.Util
 {
     public static class PlayerGPSManager
     {
-        public static List<GPS> TrackedGPS { get; set; }
-
+        private static FastResourceLock _lock = new FastResourceLock();
+        private static List<TrackedGPS> _localGPS { get; set; }
+        private static DateTime _lastTick = DateTime.Now;
+        
+        private const int UpdateDelay = 10;
         public const ushort GPSMessageId = 51317;
 
         public static void Init()
         {
-            TrackedGPS = new List<GPS>();
+            _localGPS = new List<TrackedGPS>();
             MyAPIGateway.Multiplayer.RegisterMessageHandler(GPSMessageId, GpsCoordsReceived);
-        }
-
-        private static bool GPSAreEqual(GPS gps, IMyGps gps2)
-        {
-            return (gps.X == gps2.Coords.X && gps.Y == gps2.Coords.Y && gps.Z == gps2.Coords.Z);
-        }
-
-
-        private static bool GPSAreEqual(GPS gps, GPS gps2)
-        {
-            return (gps.X == gps2.X && gps.Y == gps2.Y && gps.Z == gps2.Z);
         }
 
         private static void GpsCoordsReceived(byte[] bytes)
@@ -41,63 +35,42 @@ namespace ExpanseMod.Util
                 if (MyAPIGateway.Session.Player.Character == null) return;
 
                 GPSPacket packet = null;
-                List<GPS> remoteGPS = new List<GPS>();
+                
                 try
                 {
                     packet = MyAPIGateway.Utilities.SerializeFromBinary<GPSPacket>(bytes);
-                    remoteGPS = packet.TrackedGPS;
                 }
                 catch(Exception ex)
                 {
-                    //If we got nothing that means no GPS are left
+                    Logger.Log("An exception occured while deserializing! " + ex.Message + " " + ex.StackTrace);
+                    return;
                 }
 
-                //Check if a GPS has been removed and do the same
-                var toBeRemovedGps = TrackedGPS.Where(g => !remoteGPS.Any(t => GPSAreEqual(t,g))).ToList();
-
-                if (toBeRemovedGps.Count > 0)
+                //Ensure we don't already have this point
+                if (_localGPS.Any(l => l.gpsPacket.X == packet.X && l.gpsPacket.Y == packet.Y && l.gpsPacket.Z == packet.Z))
                 {
-                    foreach (var gps in toBeRemovedGps)
+                    Logger.Log($"Already have the GPS {packet.Name}");
+                    return;
+                }
+
+                var newGPS = MyAPIGateway.Session.GPS.Create(packet.Name,
+                                                        "GPS",
+                                                        new VRageMath.Vector3D(packet.X, packet.Y, packet.Z),
+                                                        true, false);
+
+                MyAPIGateway.Session.GPS.AddLocalGps(newGPS);
+
+                packet.ExpireTime = DateTime.Now.AddSeconds(packet.SecondsToLive);
+                packet.Hash = newGPS.Hash;
+
+                using (_lock.AcquireExclusiveUsing())
+                {
+                    _localGPS.Add(new TrackedGPS()
                     {
-                        MyAPIGateway.Session.GPS.RemoveLocalGps(gps.Hash);
-                        TrackedGPS.Remove(gps);
-                    }
+                        gpsPacket = packet,
+                        SpawnedGPS = newGPS
+                    });
                 }
-
-                //Check if we're missing 
-                var toBeAdded = remoteGPS.Where(t => !TrackedGPS.Any(g => GPSAreEqual(t, g))).ToList();
-
-                if (toBeAdded.Count > 0)
-                {
-                    foreach (var gps in toBeAdded)
-                    {
-                        var newGPS = MyAPIGateway.Session.GPS.Create(gps.Name,
-                                                             "GPS",
-                                                             new VRageMath.Vector3D(gps.X, gps.Y, gps.Z),
-                                                             true, false);
-
-                        MyAPIGateway.Session.GPS.AddLocalGps(newGPS);
-                        TrackedGPS.Add(gps);
-                    }
-                }
-
-
-                //Update existing
-                foreach (var gps in remoteGPS)
-                {
-                    var foundLocalGPS = TrackedGPS.FirstOrDefault(t => GPSAreEqual(t, gps));
-
-                    var newGPS = MyAPIGateway.Session.GPS.Create(gps.Name,
-                                                         "GPS",
-                                                         new VRageMath.Vector3D(gps.X, gps.Y, gps.Z),
-                                                         true, false);
-
-                    MyAPIGateway.Session.GPS.RemoveLocalGps(foundLocalGPS.Hash);
-                    foundLocalGPS.Hash = newGPS.Hash;
-                    MyAPIGateway.Session.GPS.AddLocalGps(newGPS);
-                    
-                }
-
             }
             catch(Exception ex)
             {
@@ -105,47 +78,65 @@ namespace ExpanseMod.Util
             }
         }
 
-        public static void Server_UpdateGPS(IMyGps updatedGPS)
-        {
-            var foundGps = TrackedGPS.FirstOrDefault(t => GPSAreEqual(t,updatedGPS));
-            if (foundGps != null)
+        public static void Update()
+        { 
+            if ((DateTime.Now - _lastTick).TotalSeconds >= UpdateDelay)
             {
-                foundGps.Hash = updatedGPS.Hash;
-                foundGps.Name = updatedGPS.Name;
-            }
+                _lastTick = DateTime.Now;
 
-            var listGps = TrackedGPS.FirstOrDefault(t => GPSAreEqual(t, updatedGPS));
-        }
+                List<TrackedGPS> _copyOfGPS = null;
+                var gpsToRemove = new List<int>();
 
-        public static void Server_AddGlobalGPS(IMyGps GPS, DateTime expireTime)
-        {
-            var newGPS = new GPS(GPS.Coords.X, GPS.Coords.Y, GPS.Coords.Z, GPS.Name, GPS.Hash);
-            TrackedGPS.Add(newGPS);
-            MyAPIGateway.Session.GPS.AddLocalGps(GPS);
-            Server_SyncGPS();
-        }
-
-        public static void Server_RemoveGlobalGPS(IMyGps GPS)
-        {
-            TrackedGPS = TrackedGPS.Where(t => !GPSAreEqual(t, GPS)).ToList();
-            MyAPIGateway.Session.GPS.RemoveLocalGps(GPS);
-            Server_SyncGPS();
-        }
+                using (_lock.AcquireSharedUsing())
+                    _copyOfGPS = new List<TrackedGPS>(_localGPS);
 
 
-        public static void Server_SyncGPS()
-        {
-            try
-            {
-                var dataPacket = MyAPIGateway.Utilities.SerializeToBinary(new GPSPacket() { TrackedGPS = TrackedGPS });
+                //Check if we have any GPS to expire
+                foreach (var gps in _copyOfGPS)
+                {
+                    var timeLeft = (gps.gpsPacket.ExpireTime - DateTime.Now);
 
-                //Send to the clients the GPS
-                MyAPIGateway.Multiplayer.SendMessageToOthers(GPSMessageId, dataPacket);
-            }
-            catch(Exception ex)
-            {
-                Logger.Log($"GPS Sync failed with an exception: {ex.TargetSite} {ex.Message} {ex.StackTrace}");
-            }
+                    Logger.Log($"Checking if we should despawn GPS {gps.gpsPacket.Name} timeleft: {timeLeft}");
+
+                    if (timeLeft.TotalSeconds <= 0)
+                    {
+                        Logger.Log($"GPS {gps.gpsPacket.Name} is flagged to be removed. Removing locally");
+                        gpsToRemove.Add(gps.SpawnedGPS.Hash);
+                        MyAPIGateway.Session.GPS.RemoveLocalGps(gps.gpsPacket.Hash);
+                    }
+                    else
+                    {
+                        var totalMinutes = Math.Round(timeLeft.TotalMinutes);
+                        var timeLeftDisplay = (totalMinutes > 0 ? totalMinutes + "m" : "<1m");
+                        var newName = gps.gpsPacket.Name + $" T-{timeLeftDisplay}";
+
+                        //Only refresh the GPS when we need to
+                        if (gps.SpawnedGPS.Name != newName)
+                        {
+                            //Refresh GPS by removing an adding. Would be nice if modifygps worked here
+                            MyAPIGateway.Session.GPS.RemoveLocalGps(gps.SpawnedGPS);
+
+                            Logger.Log($"Refreshing gps with new name: {newName}");
+
+                            var newGPS = MyAPIGateway.Session.GPS.Create(newName,
+                                                               "GPS",
+                                                               new VRageMath.Vector3D(gps.gpsPacket.X, gps.gpsPacket.Y, gps.gpsPacket.Z),
+                                                               true, false);
+
+                            gps.SpawnedGPS = newGPS;
+                            gps.gpsPacket.Hash = newGPS.Hash;
+
+                            MyAPIGateway.Session.GPS.AddLocalGps(newGPS);
+                        }
+                    }
+                }
+
+                using (_lock.AcquireExclusiveUsing())
+                {
+                    //Remove the expired GPS
+                    _localGPS = _localGPS.Where(t => !gpsToRemove.Any(r => r == t.SpawnedGPS.Hash)).ToList();
+                }
+            }     
         }
     }
 }

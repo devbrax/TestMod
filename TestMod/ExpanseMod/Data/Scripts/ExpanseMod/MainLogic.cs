@@ -9,6 +9,7 @@ using System;
 using VRage.Game.ModAPI;
 using System.Collections.Generic;
 using VRageMath;
+using System.Linq;
 
 namespace ExpanseMod
 {
@@ -19,10 +20,9 @@ namespace ExpanseMod
         public static bool mpActive => MyAPIGateway.Multiplayer.MultiplayerActive;
         public static bool isServer => MyAPIGateway.Multiplayer.IsServer;
         public static bool isDedicatedServer => MyAPIGateway.Utilities.IsDedicated;
+        
 
         public ZoneManager _zoneManager { get; set; }
-        int _counter = 0;
-
 
         public bool _isInitialized { get; set; }
 
@@ -34,11 +34,8 @@ namespace ExpanseMod
         public override void BeforeStart()
         {
             PlayerGPSManager.Init();
-            Logger.Log("GPS Manager initiated");
             base.BeforeStart();
         }
-
-
 
         public override void UpdateBeforeSimulation()
         {
@@ -72,17 +69,15 @@ namespace ExpanseMod
                 if (MyAPIGateway.Session == null)
                     return;
 
-                if (_counter % 50 == 0)
+
+                if (isServer || isDedicatedServer)
                 {
-                    var players = new List<IMyPlayer>();
-                    MyAPIGateway.Players.GetPlayers(players);
-
-                    _zoneManager.Update(players);
-
-                    _counter = 0;
+                    _zoneManager.Update();
                 }
-
-                _counter++;
+                else
+                {
+                    PlayerGPSManager.Update();
+                }
             }
             catch (Exception ex)
             {
@@ -112,17 +107,26 @@ namespace ExpanseMod
 
         private void PlayerConnected(long playerId)
         {
+            //Logger.Log("Player connected with ID " + playerId + ". Sending missing GPS coordinates");
 
+            //var players = new List<IMyPlayer>();
+            //MyAPIGateway.Players.GetPlayers(players);
+            //var player = players.FirstOrDefault(p => p.IdentityId == playerId);
+
+            //if(player != null)
+            //{
+            //    ServerGPSManager.Server_SendAllGPSToPlayer(player.SteamUserId, _zoneManager);
+            //}
         }
             
         private void PlayerDropped(string itemTypeName, string itemSubTypeName, long playerId, int amount)
         {
-
+            //Logger.Log("Player dropped with ID " + playerId);
         }
 
         private void PlayerDisconnected(long playerId)
         {
-
+            //Logger.Log("Player disconnected with ID " + playerId);
         }
 
         public override void Init(MyObjectBuilder_SessionComponent sessionComponent)
