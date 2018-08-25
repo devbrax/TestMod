@@ -95,13 +95,10 @@ namespace ExpanseMod.LootSpawn
             if (_expireTime != DateTime.MinValue)
             {
                 var timeLeft = (_expireTime - DateTime.Now);
-                //if (timeLeft.TotalSeconds < _minSecondsToShowCountdown)
-                //{
                 var totalMinutes = Math.Round(timeLeft.TotalMinutes);
                 var totalSeconds = Math.Round(timeLeft.TotalSeconds);
                 var timeLeftDisplay = (totalSeconds >= 60 ? totalMinutes + "m" : totalSeconds + "s");
                 additionalText += (additionalText.Length > 0 ? " " : string.Empty) + $"T:-{timeLeftDisplay}";
-                //}
             }
 
             if (!string.IsNullOrEmpty(additionalText))
@@ -109,16 +106,7 @@ namespace ExpanseMod.LootSpawn
             else
                 _GPS.Name = _zoneName;
 
-            //Modify existing GPS
-            foreach (var player in players)
-            {
-                //Check if all players have the GPS coordinate
-                var gpsList = MyAPIGateway.Session.GPS.GetGpsList(player.IdentityId);
-                if (!gpsList.Any(g => g.Hash.Equals(_GPS.Hash)))
-                    MyAPIGateway.Session.GPS.AddLocalGps(_GPS);
-                else
-                    MyAPIGateway.Session.GPS.ModifyGps(player.IdentityId, _GPS);
-            }
+            PlayerGPSManager.Server_UpdateGPS(_GPS);
         }
     }
 }

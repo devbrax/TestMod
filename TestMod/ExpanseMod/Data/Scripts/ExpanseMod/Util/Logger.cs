@@ -1,4 +1,5 @@
 ﻿using Sandbox.Game;
+using Sandbox.ModAPI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,7 +15,9 @@ namespace ExpanseMod.Util
 
         public static void Log(string msg)
         {
-            MyLog.Default.WriteLineAndConsole("[TESTMOD] [" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss,fff") + "] " + msg);
+            var whoAmI = MyAPIGateway.Session.IsServer ? "Server" : "Player ID: " + (MyAPIGateway.Session.Player != null ? MyAPIGateway.Session.Player.IdentityId : -1);
+            
+            MyLog.Default.WriteLineAndConsole($"[TESTMOD] [{whoAmI}] {msg}");
         }
 
         public static void Display(string msg)

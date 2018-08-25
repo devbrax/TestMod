@@ -66,6 +66,15 @@ namespace ExpanseMod.Util
             return Config;
         }
 
+        public static void RemoveGPS(IMyGps gps)
+        {
+            var players = new List<IMyPlayer>();
+            MyAPIGateway.Players.GetPlayers(players);
+            foreach (var player in players)
+            {
+                MyAPIGateway.Session.GPS.RemoveGps(player.IdentityId, gps);
+            }
+        }
 
         public static IMyGps CreateGPS(Vector3D position, string gpsName)
         {
@@ -74,7 +83,12 @@ namespace ExpanseMod.Util
                                                      position,
                                                      true,false);
 
-            MyAPIGateway.Session.GPS.AddLocalGps(GPS);
+            var players = new List<IMyPlayer>();
+            MyAPIGateway.Players.GetPlayers(players);
+            foreach (var player in players)
+            {
+                MyAPIGateway.Session.GPS.AddGps(player.IdentityId, GPS);
+            }
 
             return GPS;
         }

@@ -105,16 +105,7 @@ namespace ExpanseMod.LootSpawn
             else
                 _GPS.Name = _zoneName;
 
-            //Modify existing GPS
-            foreach (var player in players)
-            {
-                //Check if all players have the GPS coordinate
-                var gpsList = MyAPIGateway.Session.GPS.GetGpsList(player.IdentityId);
-                if (!gpsList.Any(g => g.Hash.Equals(_GPS.Hash)))
-                    MyAPIGateway.Session.GPS.AddLocalGps(_GPS);
-                else
-                    MyAPIGateway.Session.GPS.ModifyGps(player.IdentityId, _GPS);
-            }
+            PlayerGPSManager.Server_UpdateGPS(_GPS);
         }
     }
 }

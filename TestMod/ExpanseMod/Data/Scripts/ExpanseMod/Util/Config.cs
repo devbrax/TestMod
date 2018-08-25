@@ -18,9 +18,9 @@ namespace ExpanseMod.Util
 {
     public class Config
     {
-        public int Zone_TimeToLiveMinutes = 5;
+        public int Zone_TimeToLiveMinutes = 7;
 
-        public int Zone_SpawnTimeoutMinutes = 30;
+        public int Zone_SpawnTimeoutMinutes = 15;
 
         public int Zone_MaxZones = 3;
 
@@ -44,9 +44,9 @@ namespace ExpanseMod.Util
 
         public List<Vector3D> Zone_SpawnAreas = new List<Vector3D>
         {
-            new Vector3D(0,0,0), //UN Earth
+            new Vector3D(158120.12, 76418.06, 84605.13), //UN Earth
             new Vector3D(8010239.55, 8007884.69, 155530.67), // OPA Ceres cluster
-            new Vector3D(3815802.47, 1030097.81, 17298.92) //MCRN asteroid cluster
+            new Vector3D(750943.33, -17280.94, -5985.41) //MCRN asteroid cluster
         };
     }
 }

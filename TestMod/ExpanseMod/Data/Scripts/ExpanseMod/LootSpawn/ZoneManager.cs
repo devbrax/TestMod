@@ -143,11 +143,11 @@ namespace ExpanseMod.LootSpawn
 
                 var bounds = new BoundingSphereD(new Vector3D(randX, randY, randZ), radius);
                 var allEntities = MyAPIGateway.Entities.GetTopMostEntitiesInSphere(ref bounds);
+                
+                allEntities = allEntities.Where(e => !(e is Sandbox.Game.Entities.MyVoxelBase)).ToList();
 
                 if (allEntities.Count == 0)
-                {
                     return new Vector3D(randX, randY, randZ);
-                }
 
                 attempts++;
                 Logger.Log($"Couldn't spawn zone at {randX}, {randY}, {randZ} trying again. Attempt # {attempts}");

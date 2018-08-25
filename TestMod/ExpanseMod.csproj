@@ -72,11 +72,14 @@
     <Compile Include="ExpanseMod\Data\Scripts\ExpanseMod\LootSpawn\ZoneType.cs" />
     <Compile Include="ExpanseMod\Data\Scripts\ExpanseMod\LootSpawn\ZoneManager.cs" />
     <Compile Include="ExpanseMod\Data\Scripts\ExpanseMod\MainLogic.cs" />
+    <Compile Include="ExpanseMod\Data\Scripts\ExpanseMod\Models\GPS.cs" />
+    <Compile Include="ExpanseMod\Data\Scripts\ExpanseMod\Models\GPSPacket.cs" />
     <Compile Include="ExpanseMod\Data\Scripts\ExpanseMod\Models\ZoneItemReward.cs" />
     <Compile Include="ExpanseMod\Data\Scripts\ExpanseMod\Models\ZoneOutcome.cs" />
     <Compile Include="ExpanseMod\Data\Scripts\ExpanseMod\Models\ZoneScanResultItem.cs" />
     <Compile Include="ExpanseMod\Data\Scripts\ExpanseMod\Models\ZoneScanResults.cs" />
     <Compile Include="ExpanseMod\Data\Scripts\ExpanseMod\Util\Config.cs" />
+    <Compile Include="ExpanseMod\Data\Scripts\ExpanseMod\Util\PlayerGPSManager.cs" />
     <Compile Include="ExpanseMod\Data\Scripts\ExpanseMod\Util\Utilities.cs" />
     <Compile Include="ExpanseMod\Data\Scripts\ExpanseMod\Util\Logger.cs" />
   </ItemGroup>
@@ -87,7 +90,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
-    <Folder Include="VRage\Game\Components\Session\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

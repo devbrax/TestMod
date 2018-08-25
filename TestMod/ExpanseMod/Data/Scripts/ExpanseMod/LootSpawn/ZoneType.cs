@@ -11,9 +11,7 @@ namespace ExpanseMod.LootSpawn
     public abstract class ZoneType
     {
         public enum ZoneUpdateResult { Success, Failure, Timeout };
-        //The amount of seconds left before the T:-xx seconds display is added to the GPS
-        //protected const int _minSecondsToShowCountdown = 45;
-        
+
         protected Vector3D _zonePosition { get; set; }
         protected BoundingSphereD _zoneBounds { get; set; }
         protected bool _hasGPS { get; set; }
@@ -27,7 +25,7 @@ namespace ExpanseMod.LootSpawn
 
         protected abstract void UpdateGPS(List<IMyPlayer> players);
 
-        private void init(string zoneName, Vector3D origin, Vector3D position, double radius, bool createGPS = true)
+        private void init(string zoneName, Vector3D origin, Vector3D position, double radius, TimeSpan timeToLive, bool createGPS = true)
         {
             _zoneName = zoneName;
             _zoneOrigin = origin;
@@ -35,17 +33,24 @@ namespace ExpanseMod.LootSpawn
             _zoneBounds = new BoundingSphereD(_zonePosition, (double)radius);
             _lastZoneScan = new ZoneScanResults(_zonePosition);
             _hasGPS = createGPS;
-            _expireTime = DateTime.MinValue;
+
+            _expireTime = DateTime.Now.Add(timeToLive);
+            _timeToLive = timeToLive;
 
             if (createGPS)
-                _GPS = Utilities.CreateGPS(position, zoneName);
+            {
+                _GPS = MyAPIGateway.Session.GPS.Create(zoneName,
+                                                     "GPS",
+                                                     position,
+                                                     true, false);
+
+                PlayerGPSManager.Server_AddGlobalGPS(_GPS, _expireTime);
+            }
         }
 
         public ZoneType(string zoneName, Vector3D origin, Vector3D position, double radius, TimeSpan timeToLive, bool createGPS = true)
         {
-            init(zoneName, origin, position, radius, createGPS);
-            _expireTime = DateTime.Now.Add(timeToLive);
-            _timeToLive = timeToLive;
+            init(zoneName, origin, position, radius, timeToLive, createGPS);
         }
 
         //TODO: Don't require players
@@ -61,7 +66,7 @@ namespace ExpanseMod.LootSpawn
             if (_expireTime != DateTime.MinValue && DateTime.Now.CompareTo(_expireTime) > 0)
             {
                 if (_hasGPS)
-                    MyAPIGateway.Session.GPS.RemoveLocalGps(_GPS);
+                    PlayerGPSManager.Server_RemoveGlobalGPS(_GPS);
 
                 return ZoneUpdateResult.Timeout;
             }

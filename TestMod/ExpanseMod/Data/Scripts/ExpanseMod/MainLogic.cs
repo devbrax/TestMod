@@ -16,7 +16,6 @@ namespace ExpanseMod
     public class MainLogic : MySessionComponentBase
     {
         private string _configFileName = "TheExpanseZones.cfg";
-
         public static bool mpActive => MyAPIGateway.Multiplayer.MultiplayerActive;
         public static bool isServer => MyAPIGateway.Multiplayer.IsServer;
         public static bool isDedicatedServer => MyAPIGateway.Utilities.IsDedicated;
@@ -34,17 +33,21 @@ namespace ExpanseMod
 
         public override void BeforeStart()
         {
+            PlayerGPSManager.Init();
+            Logger.Log("GPS Manager initiated");
             base.BeforeStart();
         }
+
+
 
         public override void UpdateBeforeSimulation()
         {
             try
             {
+                base.UpdateBeforeSimulation();
+
                 if (!_isInitialized && MyAPIGateway.Session != null && MyAPIGateway.Session.Player != null)
                 {
-                    //Debug = MyAPIGateway.Session.Player.IsExperimentalCreator();
-
                     if (!MyAPIGateway.Session.OnlineMode.Equals(MyOnlineModeEnum.OFFLINE) && MyAPIGateway.Multiplayer.IsServer && !MyAPIGateway.Utilities.IsDedicated)
                         InitServer();
                     Init();
@@ -64,49 +67,47 @@ namespace ExpanseMod
                 return;
             }
 
-            if (isServer || isDedicatedServer)
+            try
             {
-                try
-                {
-                    if (_counter % 50 == 0)
-                    {
-                        var players = new List<IMyPlayer>();
-                        MyAPIGateway.Players.GetPlayers(players);
+                if (MyAPIGateway.Session == null)
+                    return;
 
-                        _zoneManager.Update(players);
-                    }
-                }
-                catch (Exception ex)
+                if (_counter % 50 == 0)
                 {
-                    Logger.Log($"A fatal exception was thrown during game logic. {ex.Message} {ex.StackTrace}");
+                    var players = new List<IMyPlayer>();
+                    MyAPIGateway.Players.GetPlayers(players);
+
+                    _zoneManager.Update(players);
+
+                    _counter = 0;
                 }
 
                 _counter++;
             }
-
-            base.UpdateBeforeSimulation();
+            catch (Exception ex)
+            {
+                Logger.Log($"A fatal exception was thrown during game logic. {ex.TargetSite} {ex.Message} {ex.StackTrace}");
+            }
         }
 
         private void Init()
         {
             _isInitialized = true; // Set this first to block any other calls from UpdateBeforeSimulation().
-
-            //Load configuration. This must be done before anything is initialized
-            Utilities.ReadConfigFile(_configFileName);
-
-            _zoneManager = new ZoneManager(Utilities.Config.Zone_SpawnAreas, Utilities.Config.Zone_MaxZones, new TimeSpan(0, Utilities.Config.Zone_SpawnTimeoutMinutes, 0));
-
             Logger.Log("Expanse Zones Client Initialized");
         }
 
         private void InitServer()
         {
             _isInitialized = true;
-            Logger.Log("Server started");
 
             MyVisualScriptLogicProvider.PlayerConnected += PlayerConnected;
             MyVisualScriptLogicProvider.PlayerDropped += PlayerDropped;
             MyVisualScriptLogicProvider.PlayerDisconnected += PlayerDisconnected;
+
+            //Load configuration. This must be done before anything is initialized
+            Utilities.ReadConfigFile(_configFileName);
+
+            _zoneManager = new ZoneManager(Utilities.Config.Zone_SpawnAreas, Utilities.Config.Zone_MaxZones, new TimeSpan(0, Utilities.Config.Zone_SpawnTimeoutMinutes, 0));
         }
 
         private void PlayerConnected(long playerId)
