@@ -8,13 +8,12 @@ using System.Text;
 using System.Threading.Tasks;
 using VRage.Game.ModAPI;
 using VRageMath;
+using static ExpanseMod.LootSpawn.ZoneType;
 
 namespace ExpanseMod.LootSpawn
 {
     public class ZoneManager
     {
-        private enum ZoneTypes { Military, Industrial, Science };
-
         private List<ZoneTypes> _availableZoneTypes = new List<ZoneTypes>();
         private DateTime _lastTick = DateTime.Now;
         private List<Vector3D> _spawnAreas;
@@ -59,14 +58,74 @@ namespace ExpanseMod.LootSpawn
             return _activeZones;
         }
 
+        protected void TrySpawnZone()
+        {
+            var usedSpawnPoints = _activeZones.Where(z => !z._zoneOrigin.Equals(Vector3D.MinValue)).Select(z => z._zoneOrigin);
+            var availableSpawnAreas = _spawnAreas.Where(s => !usedSpawnPoints.Any(u => u.Equals(s))).ToList();
+
+            if (availableSpawnAreas.Count == 0)
+            {
+                Logger.Log("ERROR! Unable to find spawn location for zone.");
+                return;
+            }
+
+            var randIndex = _rand.Next(0, availableSpawnAreas.Count);
+            var origin = availableSpawnAreas[randIndex];
+
+            var position = GetAvailableSpawnZone(origin, Utilities.ServerConfig.Zone_SpawnScanRadiusMeters, Utilities.ServerConfig.Zone_SpawnRandomOffset, Utilities.ServerConfig.Zone_SpawnMaxAttempts);
+            if (!position.Equals(Vector3D.MinValue))
+            {
+                //Pick a random type of Zone
+                var availableZones = _availableZoneTypes.Where(available => !_activeZones.Any(active => active.Type == available)).ToList();
+
+                if (availableZones.Count == 0)
+                {
+                    Logger.Log("Unable to spawn zone. No available types left.");
+                    return;
+                }
+
+                var zoneType = availableZones[_rand.Next(0, availableZones.Count)];
+
+                ZoneType newZone;
+
+                switch (zoneType)
+                {
+                    case ZoneTypes.Military:
+                        newZone = new ConflictZone(origin, position, Utilities.ServerConfig.Zone_MilitaryRadius);
+                        break;
+
+                    case ZoneTypes.Industrial:
+                        newZone = new IndustrialZone(origin, position, Utilities.ServerConfig.Zone_IndustryRadius);
+                        break;
+
+                    case ZoneTypes.Science:
+                        newZone = new ScienceZone(origin, position, Utilities.ServerConfig.Zone_ScienceRadius);
+                        break;
+                    default:
+                        throw new Exception($"Unknown zone type {zoneType}");
+                }
+
+                //Add to tracked zones
+                _activeZones.Add(newZone);                    
+            }
+
+            //Complete initial setup if we have the minimum and keep track of the last time we spawned them
+            if (_activeZones.Count == _minZonesToMaintain)
+            {
+                _initialSetupComplete = true;
+
+                //Keep track of the last time we spawned enough zones
+                _zoneLastSpawnTime = DateTime.Now;
+            }
+        }
+
         public void Update()
         {
             if ((DateTime.Now - _lastTick).TotalSeconds >= UpdateDelay)
             {
                 _lastTick = DateTime.Now;
 
-                var players = new List<IMyPlayer>();
-                MyAPIGateway.Players.GetPlayers(players);
+                var players = Utilities.GetPlayers();
 
                 var zonesToRemove = new List<ZoneType>();
 
@@ -85,55 +144,7 @@ namespace ExpanseMod.LootSpawn
                         || _initialSetupComplete == false))
                 {
                     //Try and spawn a zone
-                    var usedSpawnPoints = _activeZones.Where(z => !z._zoneOrigin.Equals(Vector3D.MinValue)).Select(z => z._zoneOrigin);
-                    var availableSpawnAreas = _spawnAreas.Where(s => !usedSpawnPoints.Any(u => u.Equals(s))).ToList();
-
-                    if (availableSpawnAreas.Count == 0)
-                    {
-                        Logger.Log("ERROR! Unable to find spawn location for zone.");
-                        return;
-                    }
-
-                    var randIndex = _rand.Next(0, availableSpawnAreas.Count);
-                    var origin = availableSpawnAreas[randIndex];
-
-                    var position = GetAvailableSpawnZone(origin, Utilities.Config.Zone_SpawnScanRadiusMeters, Utilities.Config.Zone_SpawnRandomOffset, Utilities.Config.Zone_SpawnMaxAttempts);
-                    if (!position.Equals(Vector3D.MinValue))
-                    {
-                        //Pick a random type of Zone
-                        var zoneType = _availableZoneTypes[_rand.Next(0, _availableZoneTypes.Count)];
-
-                        ZoneType newZone;
-
-                        switch (zoneType)
-                        {
-                            case ZoneTypes.Military:
-                                newZone = new ConflictZone(origin, position, Utilities.Config.Zone_MilitaryRadius);
-                                break;
-
-                            case ZoneTypes.Industrial:
-                                newZone = new IndustrialZone(origin, position, Utilities.Config.Zone_IndustryRadius);
-                                break;
-
-                            case ZoneTypes.Science:
-                                newZone = new ScienceZone(origin, position, Utilities.Config.Zone_ScienceRadius);
-                                break;
-                            default:
-                                throw new Exception($"Unknown zone type {zoneType}");
-                        }
-
-                        //Add to tracked zones
-                        _activeZones.Add(newZone);
-                    }
-
-                    //Complete initial setup if we have the minimum and keep track of the last time we spawned them
-                    if (_activeZones.Count == _minZonesToMaintain)
-                    {
-                        _initialSetupComplete = true;
-
-                        //Keep track of the last time we spawned enough zones
-                        _zoneLastSpawnTime = DateTime.Now;
-                    }
+                    TrySpawnZone();
                 }
             }
         }

@@ -14,9 +14,10 @@ using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
 
+
 namespace ExpanseMod.Util
 {
-    public class Config
+    public class ServerConfig
     {
         public int Zone_TimeToLiveMinutes = 7;
 
@@ -41,6 +42,10 @@ namespace ExpanseMod.Util
         public string Zone_MilitaryReward = "MilitaryComponent";
         public string Zone_IndustryReward = "IndustrialComponent";
         public string Zone_ScienceReward = "ScienceComponent";
+
+        public Vector3D Zone_IndustryColor = new Vector3D(244, 216, 11);
+        public Vector3D Zone_MilitaryColor = new Vector3D(222, 90, 12);
+        public Vector3D Zone_ScienceColor = new Vector3D(70, 84, 249);
 
         public List<Vector3D> Zone_SpawnAreas = new List<Vector3D>
         {

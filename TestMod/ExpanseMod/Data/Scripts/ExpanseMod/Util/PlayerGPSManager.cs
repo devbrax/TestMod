@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VRage;
 using VRage.Game.ModAPI;
+using VRageMath;
 
 namespace ExpanseMod.Util
 {
@@ -20,6 +21,7 @@ namespace ExpanseMod.Util
         
         private const int UpdateDelay = 10;
         public const ushort GPSMessageId = 51317;
+        private const int MaxTooltipSpam = 50;
 
         public static void Init()
         {
@@ -53,12 +55,18 @@ namespace ExpanseMod.Util
                     return;
                 }
 
+                //var timeLeftInSeconds = (int)(packet.ExpireTime - DateTime.UtcNow).TotalSeconds;
+                //MyVisualScriptLogicProvider.AddGPS(packet.Name, "GPS", new Vector3D(packet.X, packet.Y, packet.Z), packet.Color, timeLeftInSeconds);
+
                 var newGPS = MyAPIGateway.Session.GPS.Create(packet.Name,
                                                         "GPS",
-                                                        new VRageMath.Vector3D(packet.X, packet.Y, packet.Z),
+                                                        new Vector3D(packet.X, packet.Y, packet.Z),
                                                         true, false);
 
+                Logger.Log($"Adding GPS: {packet.Name} Color: {packet.Color.R} {packet.Color.G} {packet.Color.B}");
+
                 MyAPIGateway.Session.GPS.AddLocalGps(newGPS);
+                MyVisualScriptLogicProvider.SetGPSColor(packet.Name, packet.Color);
 
                 packet.ExpireTime = DateTime.Now.AddSeconds(packet.SecondsToLive);
                 packet.Hash = newGPS.Hash;
@@ -70,6 +78,14 @@ namespace ExpanseMod.Util
                         gpsPacket = packet,
                         SpawnedGPS = newGPS
                     });
+                }
+
+                //For the first x times a zone spawns for a player, let them know
+                if (Utilities.ClientConfig.Zone_SpawnTooltipCount < MaxTooltipSpam)
+                {
+                    Utilities.DisplayMessageToLocalPlayer($"A new zone has spawned! Be the closest to the center to receive a reward.");
+                    Utilities.ClientConfig.Zone_SpawnTooltipCount++;
+                    Utilities.SaveClientConfig();
                 }
             }
             catch(Exception ex)
@@ -96,11 +112,8 @@ namespace ExpanseMod.Util
                 {
                     var timeLeft = (gps.gpsPacket.ExpireTime - DateTime.Now);
 
-                    Logger.Log($"Checking if we should despawn GPS {gps.gpsPacket.Name} timeleft: {timeLeft}");
-
                     if (timeLeft.TotalSeconds <= 0)
                     {
-                        Logger.Log($"GPS {gps.gpsPacket.Name} is flagged to be removed. Removing locally");
                         gpsToRemove.Add(gps.SpawnedGPS.Hash);
                         MyAPIGateway.Session.GPS.RemoveLocalGps(gps.gpsPacket.Hash);
                     }
@@ -116,18 +129,20 @@ namespace ExpanseMod.Util
                             //Refresh GPS by removing an adding. Would be nice if modifygps worked here
                             MyAPIGateway.Session.GPS.RemoveLocalGps(gps.SpawnedGPS);
 
-                            Logger.Log($"Refreshing gps with new name: {newName}");
-
                             var newGPS = MyAPIGateway.Session.GPS.Create(newName,
                                                                "GPS",
-                                                               new VRageMath.Vector3D(gps.gpsPacket.X, gps.gpsPacket.Y, gps.gpsPacket.Z),
+                                                               new Vector3D(gps.gpsPacket.X, gps.gpsPacket.Y, gps.gpsPacket.Z),
                                                                true, false);
 
                             gps.SpawnedGPS = newGPS;
                             gps.gpsPacket.Hash = newGPS.Hash;
 
                             MyAPIGateway.Session.GPS.AddLocalGps(newGPS);
+                            MyVisualScriptLogicProvider.SetGPSColor(newName, gps.gpsPacket.Color);
                         }
+
+                        //Update color
+                        MyVisualScriptLogicProvider.SetGPSColor(gps.SpawnedGPS.Name, gps.gpsPacket.Color);
                     }
                 }
 

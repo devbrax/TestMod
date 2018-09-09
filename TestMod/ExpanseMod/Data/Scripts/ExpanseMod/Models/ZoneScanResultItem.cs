@@ -11,6 +11,7 @@ namespace ExpanseMod.Models
 {
     public class ZoneScanResultItem
     {
+        public IMyPlayer Player { get; set; }
         public long PlayerIdentityId { get; set; }
         public MyObjectBuilder_Character Character { get; set; }
         public MyCubeGrid Ship { get; set; }

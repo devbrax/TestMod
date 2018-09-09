@@ -16,7 +16,6 @@ namespace ExpanseMod
     [MySessionComponentDescriptor(MyUpdateOrder.BeforeSimulation)]
     public class MainLogic : MySessionComponentBase
     {
-        private string _configFileName = "TheExpanseZones.cfg";
         public static bool mpActive => MyAPIGateway.Multiplayer.MultiplayerActive;
         public static bool isServer => MyAPIGateway.Multiplayer.IsServer;
         public static bool isDedicatedServer => MyAPIGateway.Utilities.IsDedicated;
@@ -33,6 +32,7 @@ namespace ExpanseMod
 
         public override void BeforeStart()
         {
+            Logger.Init();
             PlayerGPSManager.Init();
             base.BeforeStart();
         }
@@ -41,8 +41,6 @@ namespace ExpanseMod
         {
             try
             {
-                base.UpdateBeforeSimulation();
-
                 if (!_isInitialized && MyAPIGateway.Session != null && MyAPIGateway.Session.Player != null)
                 {
                     if (!MyAPIGateway.Session.OnlineMode.Equals(MyOnlineModeEnum.OFFLINE) && MyAPIGateway.Multiplayer.IsServer && !MyAPIGateway.Utilities.IsDedicated)
@@ -53,19 +51,19 @@ namespace ExpanseMod
                     && MyAPIGateway.Session != null && MyAPIGateway.Utilities.IsDedicated && MyAPIGateway.Multiplayer.IsServer)
                 {
                     InitServer();
-                    base.UpdateBeforeSimulation();
                     return;
                 }
             }
             catch(Exception ex)
             {
                 Logger.Log($"A fatal exception was thrown during UpdateBeforeSimulation initialization. {ex.Message} {ex.StackTrace}");
-                base.UpdateBeforeSimulation();
                 return;
             }
 
             try
             {
+                base.UpdateBeforeSimulation();
+
                 if (MyAPIGateway.Session == null)
                     return;
 
@@ -89,20 +87,23 @@ namespace ExpanseMod
         {
             _isInitialized = true; // Set this first to block any other calls from UpdateBeforeSimulation().
             Logger.Log("Expanse Zones Client Initialized");
+
+            Utilities.ReadClientConfigFile();
         }
 
         private void InitServer()
         {
             _isInitialized = true;
-
+            
             MyVisualScriptLogicProvider.PlayerConnected += PlayerConnected;
             MyVisualScriptLogicProvider.PlayerDropped += PlayerDropped;
             MyVisualScriptLogicProvider.PlayerDisconnected += PlayerDisconnected;
 
             //Load configuration. This must be done before anything is initialized
-            Utilities.ReadConfigFile(_configFileName);
+            Utilities.ReadServerConfigFile();
+            _zoneManager = new ZoneManager(Utilities.ServerConfig.Zone_SpawnAreas, Utilities.ServerConfig.Zone_MaxZones, new TimeSpan(0, Utilities.ServerConfig.Zone_SpawnTimeoutMinutes, 0));
 
-            _zoneManager = new ZoneManager(Utilities.Config.Zone_SpawnAreas, Utilities.Config.Zone_MaxZones, new TimeSpan(0, Utilities.Config.Zone_SpawnTimeoutMinutes, 0));
+            Logger.Log("Expanse Zones Server Initialized");
         }
 
         private void PlayerConnected(long playerId)
@@ -132,6 +133,11 @@ namespace ExpanseMod
         public override void Init(MyObjectBuilder_SessionComponent sessionComponent)
         {
             base.Init(sessionComponent);
+        }
+
+        protected override void UnloadData()
+        {
+            Logger.Close();
         }
     }
 }

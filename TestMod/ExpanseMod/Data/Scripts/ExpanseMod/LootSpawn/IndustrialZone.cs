@@ -19,12 +19,12 @@ namespace ExpanseMod.LootSpawn
         private ZoneItemReward _reward { get; set; }
 
         public IndustrialZone(Vector3D origin, Vector3D position, double radius) 
-            : base("Resource Extraction Site", origin, position, radius, new TimeSpan(0, Utilities.Config.Zone_TimeToLiveMinutes, 0), true)
+            : base(ZoneTypes.Industrial, "Resource Extraction Site", origin, position, radius, new TimeSpan(0, Utilities.ServerConfig.Zone_TimeToLiveMinutes, 0), Utilities.VectorToColor(Utilities.ServerConfig.Zone_IndustryColor), true)
         {
             _reward = new ZoneItemReward()
             {
-                ItemCount = Utilities.Config.Zone_IndustryRewardCount,
-                ItemDefinition = new MyDefinitionId(typeof(MyObjectBuilder_Component), Utilities.Config.Zone_IndustryReward)
+                ItemCount = Utilities.ServerConfig.Zone_IndustryRewardCount,
+                ItemDefinition = new MyDefinitionId(typeof(MyObjectBuilder_Component), Utilities.ServerConfig.Zone_IndustryReward)
             };
         }
 
@@ -67,7 +67,16 @@ namespace ExpanseMod.LootSpawn
                 //Check if the cargo container isn't full
                 if (!block.GetInventory().IsFull)
                 {
-                    Util.Utilities.InventoryAdd(block.GetInventory(), //The cargo container block
+                    Logger.LogObject(new ZoneRewardLogEntry()
+                    {
+                        Type = "Industrial",
+                        PlayerID = closestShip.Value.PlayerIdentityId,
+                        PlayerSteamID = closestShip.Value.Player.SteamUserId,
+                        Position = this._zonePosition,
+                        Time = DateTime.UtcNow
+                    });
+
+                    Utilities.InventoryAdd(block.GetInventory(), //The cargo container block
                                               _reward.ItemCount, //How many items to add
                                               _reward.ItemDefinition); //The exact item type and subtype
 

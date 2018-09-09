@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VRage.Game.ModAPI;
+using VRageMath;
 
 namespace ExpanseMod.Models
 {
@@ -38,15 +39,36 @@ namespace ExpanseMod.Models
         [ProtoMember(9)]
         public DateTime ExpireTime { get; set; }
 
+        [ProtoMember(10)]
+        public int ColorR { get; set; }
+
+        [ProtoMember(11)]
+        public int ColorG { get; set; }
+
+        [ProtoMember(12)]
+        public int ColorB { get; set; }
+
+        public Color Color
+        {
+            get
+            {
+                return new Color(ColorR, ColorG, ColorB);
+            }
+        }
+
         public GPSPacket() { } // empty ctor is required for deserialization
 
-        public GPSPacket(double x, double y, double z, string name, double secondsToLive)
+        public GPSPacket(double x, double y, double z, string name, double secondsToLive, int colorR, int colorG, int colorB)
         {
             X = x;
             Y = y;
             Z = z;
             Name = name;
             SecondsToLive = secondsToLive;
+
+            ColorR = colorR;
+            ColorG = colorG;
+            ColorB = colorB;
         }
 
         public GPSPacket(ulong sender, long entityId, double x, double y, double z, string name, int hash, double secondsToLive)

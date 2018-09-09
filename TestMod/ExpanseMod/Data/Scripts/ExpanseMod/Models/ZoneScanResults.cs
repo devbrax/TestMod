@@ -44,16 +44,16 @@ namespace ExpanseMod.Models
             CharactersFound = FoundPlayers.Count;
         }
 
-        public void FoundPilotedShip(long playerIdentityId, MyCubeGrid ship)
+        public void FoundPilotedShip(IMyPlayer player, MyCubeGrid ship)
         {
             var shipPosition = ship.PositionComp.GetPosition();
 
             var shipBlocks = ship.GetBlocks();
             var totalBlocks = shipBlocks.Count();
-            
-
-            FoundShips[playerIdentityId] = new ZoneScanResultItem() {
-                PlayerIdentityId = playerIdentityId,
+ 
+            FoundShips[player.IdentityId] = new ZoneScanResultItem() {
+                PlayerIdentityId = player.IdentityId,
+                Player = player,
                 Ship = ship,
                 DistanceToCenter = Vector3D.Distance(ZoneCenter, shipPosition)//,
                 //IsLargeShip = (largeBlocks > smallBlocks),
